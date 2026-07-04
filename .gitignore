@@ -17,3 +17,7 @@ wheels/
 
 # Local runtime artifacts
 *.log
+
+# Project configs containing credentials
+config.yaml
+

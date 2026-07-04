@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.interface.schemas import Response
+from app.interfaces.schemas import Response
 from starlette.exceptions import HTTPException
 from app.application.errors.exceptions import AppException
 

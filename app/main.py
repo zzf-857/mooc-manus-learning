@@ -1,18 +1,19 @@
 
 import logging
 from contextlib import asynccontextmanager
-from app.infrastructure.storage.redis import get_redis
 
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.infrastructure.storage.postgres import get_postgres
-
 from app.infrastructure.logging import setup_logging
-from app.interface.endpoints.routes import router
+from app.infrastructure.storage.postgres import get_postgres
+from app.infrastructure.storage.redis import get_redis
+from app.infrastructure.storage.cos import get_cos
+
+from app.interfaces.endpoints.routes import router
+from app.interfaces.errors.exception_handlers import register_exception_handlers
 from core.config import get_settings
-from app.interface.errors.exception_handlers import register_exception_handlers
 
 
 
@@ -40,20 +41,18 @@ async def lifespan(app:FastAPI):
     # 1.打印日志标识程序开始了
     logger.info("MoocManus正在初始化")
 
-    # 2.初始化Redis缓存客户端
-    redis = get_redis()
-    await redis.init()
-
-    # 3. 初始化Postgres客户端
-    postgres = get_postgres()
-    await postgres.init()
+    # 2.初始化Redis缓存/Postgres/Cos客户端
+    await get_redis().init()
+    await get_postgres().init()
+    await get_cos().init()
 
     try:
         # lifespan 节点/分界
         yield
     finally:
-        await redis.shutdown()
-        await postgres.shutdown()
+        await get_redis().shutdown()
+        await get_postgres().shutdown()
+        await get_cos().shutdown()
         logger.info("MoocManus正在关闭。。。")
 
 # 4.创建moocmanus应用实例

@@ -48,7 +48,7 @@ class TooManyRequestsError(AppException):
 
 
 
-class ServerRequestsRequestsError(AppException):
+class ServerRequestsError(AppException):
     """服务器异常错误"""
 
     def __init__(self, msg: str = "服务器出现异常，请稍后重试"):

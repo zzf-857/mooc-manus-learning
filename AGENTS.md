@@ -80,3 +80,13 @@ Before pushing, confirm:
 - Remote repository is configured.
 - Current branch is correct.
 - No secrets are staged or committed.
+
+## Tutoring & Collaboration Mode (带学协作模式)
+
+When the user requests tutoring and code completion, follow this workflow:
+
+1. **Screenshot-Driven Completion (截图驱动补全)**: The user will send screenshots of the teacher's IDE. Analyze the screenshot, explain the code logic using **Unity analogies (Unity 概念类比)**, and list the proposed changes.
+2. **Reference Source Code (参考老师源码)**: If there are inconsistencies or if the user has made mistakes, refer to the teacher's official source code directory to inspect correct implementations:
+   `F:\youtubeUp\素材\Agent\MCP+A2A 从0到1构建类Manus多Agent全栈应用\源码\imooc-mas\mooc-manus`
+3. **No Over-Engineering (禁止过度编写)**: Unless a missing dependency or critical logic block threatens application correctness, do NOT write additional code. Focus strictly on completing and explaining the code captured in the user's screenshot.
+
