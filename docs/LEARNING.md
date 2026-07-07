@@ -532,12 +532,30 @@ POST /api/app-config/llm
 - 新增了 [memory.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/domain/models/memory.py) [NEW]，定义了 `Memory` 领域模型，设计了 `compact` 自动压缩网页巨量上下文（将 HTML 源码用 removed 替代并剔除中间推理内容）以节约 Token 的高级机制。
 - 新增了 [plan.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/domain/models/plan.py) [NEW]，定义了 `Step`（子任务目标）和 `Plan`（主任务清单管理器）领域模型，完成了任务状态流转及 `get_next_step`（自动按顺序获取待执行目标）的逻辑设计。
 - 新增了 [event.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/domain/models/event.py) [NEW] 多态事件流模型，以及配套的三个模型依赖：[file.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/domain/models/file.py) [NEW]、[search.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/domain/models/search.py) [NEW]、[tool_result.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/domain/models/tool_result.py) [NEW]，实现了基于辨别器（Discriminator）的高性能事件解包分发。
+- 新增了 [json_parser.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/domain/external/json_parser.py) [NEW]，定义了 `JSONParser` 协议接口，规范了将受损 JSON 字符串解析并自动纠正为 Python 对象的契约。
+- 新增了 [repair_json_parser.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/infrastructure/external/json_parser/repair_json_parser.py) [NEW]（以及包初始化文件 `__init__.py`），基于 `json_repair` 第三方库实现 `RepairJSONParser` 解析器，支持在 JSON 缺失尾部符号或有标记时完成自动纠错，并直接输出 Python 结构体对象。
 
 **Unity 开发者类比**：
 - `Memory` 就像游戏对话系统中的历史聊天缓存（`List<ChatMessage> chatHistory`）。其 `compact` 回收机制类似于我们在使用大型配置文件生成怪物模型后，瞬间从内存中销毁（Destroy）临时的大体积压缩文件，只留轻量实体在场景中，以防止发生内存泄漏（Token溢出）。
 - `Plan` 对应游戏中的主线任务系统（`QuestSystem`）。
 - `Step` 对应任务树中的一个个具体任务目标（`QuestObjective`）。其 `get_next_step()` 对应 `GetActiveObjective()`，负责指引大模型走向下一个待探索的子目标。
 - Pydantic Discriminator（类型辨别器）：相当于 C# 中基于 JSON 报文里的 Type 字段值自动判定并 `switch` 实例化到具体子类的多态反序列化机制，直接在框架底层以 O(1) 效率完成精准分发。
+- `JSONParser` 协议：相当于 Unity 中的一个核心接口（如 `IDamageable` 或 `IInteractable`），只定义接口函数（`invoke`）用于规范各子系统的能力。
+- `RepairJSONParser` 实现：类似于具体游戏物体上挂载的继承了接口的具体脚本组件，负责执行底层解析逻辑。
+- JSON 修复与容错：类似于在游戏加载损坏本地存档数据或网络配置报错时，执行的备用机制和默认值回退处理，防止游戏直接 Crash（闪退/抛异常）。
+
+## 阶段更新：2026-07-07
+
+全量补齐了后端关于 MCP 服务与 A2A 智能体服务动态连接与参数配置的完整链路。
+
+**已完成成果**：
+- 在 `pyproject.toml` 中安装了 `mcp` 客户端长连接依赖库。
+- 新建了 [app_config.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/interfaces/schemas/app_config.py) [NEW]，定义了前后台传递配置时的数据校验模型。
+- 新建了 [mcp.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/domain/services/tools/mcp.py) [NEW] 与 [a2a.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/domain/services/tools/a2a.py) [NEW]，实现了长连接会话（ClientSession）的缓存、环境变量合并、RPC 回调以及生命周期安全清理。
+- 重构升级了 [app_config_service.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/application/services/app_config_service.py) 配置服务类和 [app_config_routes.py](file:///f:/AI/AgentLearn/mooc-manus/api/app/interfaces/endpoints/app_config_routes.py) 路由端点文件，注册了 mcp-servers 与 a2a-servers 的增删改查 REST 接口。
+
+**Unity 开发者类比**：
+- `MCPClientManager` 与 `A2AClientManager` 相当于游戏引擎里的 **“外部硬件设备管理系统（如 InputSystem 设备扫描与监听）”**。它在游戏运行时缓存外接设备（手柄、方向盘）的硬件卡片状态，当手柄被玩家禁用或启用时，动态向大脑重新绑定控制映射，并且在游戏退出时（cleanup）自动释放物理资源。
 
 ## 安全规则
 

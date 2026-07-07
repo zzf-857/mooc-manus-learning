@@ -21,3 +21,5 @@ wheels/
 # Project configs containing credentials
 config.yaml
 
+# Learning documentation & guides
+scratch/project_structure.html
