@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.env
+.env.*
+!.env.example
+
+# IDE metadata
+.idea/
+
+# Local runtime artifacts
+*.log
+
+# Project configs containing credentials
+config.yaml
+
+# Learning documentation & guides
+scratch/project_structure.html

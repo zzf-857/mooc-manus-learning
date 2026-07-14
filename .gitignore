@@ -1,25 +1,39 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-
-# Virtual environments
-.venv
+# Secrets and machine-local configuration
 .env
 .env.*
 !.env.example
+!**/.env.example
+api/config.yaml
 
-# IDE metadata
-.idea/
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/.venv/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/*.egg-info/
+**/build/
+**/dist/
 
-# Local runtime artifacts
-*.log
+# Node / Next.js
+**/node_modules/
+**/.next/
+**/out/
+**/coverage/
+**/*.tsbuildinfo
 
-# Project configs containing credentials
-config.yaml
+# IDE and OS metadata
+**/.idea/
+**/.vscode/
+.DS_Store
+Thumbs.db
 
-# Learning documentation & guides
-scratch/project_structure.html
+# Runtime files
+**/*.log
+**/tmp/
+**/.cache/
+
+# Local TLS material
+nginx/ssl/
+
