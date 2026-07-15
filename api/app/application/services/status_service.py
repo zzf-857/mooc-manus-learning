@@ -1,5 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/20 1:17
+@Author  : thezehui@gmail.com
+@File    : status_service.py
+"""
 import asyncio
 from typing import List
+
 from app.domain.external.health_checker import HealthChecker
 from app.domain.models.health_status import HealthStatus
 
@@ -16,7 +24,7 @@ class StatusService:
         # 1.并行调用所有服务进行检查
         results = await asyncio.gather(
             *(checker.check() for checker in self._checkers),
-            return_exceptions=True
+            return_exceptions=True,  # 捕获异常而不是让gather失效
         )
 
         # 2.处理可能发生的异常
@@ -29,7 +37,6 @@ class StatusService:
                     status="error",
                     details=f"未知检查器发生错误: {str(res)}"
                 ))
-
             else:
                 processed_results.append(res)
 

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/12 14:32
+@Author  : thezehui@gmail.com
+@File    : file.py
+"""
 import asyncio
 import http.client
 import logging
@@ -11,6 +18,13 @@ from app.core.config import get_settings
 from app.interfaces.errors.exceptions import BadRequestException, AppException
 from app.models.supervisor import ProcessInfo, SupervisorActionResult, SupervisorTimeout
 
+"""
+1.Supervisor启动后，通过一个Unix套接字文件来实现通信(rpc协议)
+2.连接这个通信文件，/tmp/supervisor.sock (xml-rpc连接)
+3.使用某种方式来完整转换，让xml-rpc实现连接supervisor.sock
+4.连接之后我们就可以调用rpc对应的方法，getAllProcessInfo()
+"""
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +37,7 @@ class UnixStreamHTTPConnection(http.client.HTTPConnection):
         self.socket_path = socket_path
 
     def connect(self) -> None:
-        """重写连接方法，向Unix-RPC套接字通道发送请求"""
+        """重写连接方法，欺骗xml-rpc库让其觉得自己正在进行网络连接"""
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.sock.connect(self.socket_path)
 
@@ -47,12 +61,7 @@ class SupervisorService:
         """构造函数，完成supervisor服务链接"""
         # 1.连接supervisor配置
         self.rpc_url = "/tmp/supervisor.sock"
-        
-        # 容器开发环境或是Windows环境兼容处理：只有存在该套接字时才连接，防止Windows本地启动时直接抛错
-        self.server = None
-        import os
-        if os.path.exists(self.rpc_url):
-            self._connect_rpc()
+        self._connect_rpc()
 
         # 2.supervisor超时配置
         settings = get_settings()
@@ -62,8 +71,8 @@ class SupervisorService:
         self.shutdown_timer = None
         self._expand_enabled = True  # 是否自动保活(每调用一次接口就增加时间)
 
-        # 3.检测是否配置了自动销毁且运行于Linux环境
-        if settings.server_timeout_minutes is not None and os.path.exists(self.rpc_url):
+        # 3.检测是否配置了自动销毁
+        if settings.server_timeout_minutes is not None:
             # 4.设置销毁时间+定时器
             self.shutdown_time = datetime.now() + timedelta(minutes=settings.server_timeout_minutes)
             self._setup_timer(settings.server_timeout_minutes)
@@ -123,21 +132,10 @@ class SupervisorService:
             logger.error(f"连接Supervisor服务失败: {str(e)}")
             raise BadRequestException(f"连接Supervisor服务失败: {str(e)}")
 
-    async def _call_rpc(self, method_name: str, *args) -> Any:
+    @classmethod
+    async def _call_rpc(cls, method, *args) -> Any:
         """根据传递的方法+参数调用rpc方法"""
-        if not self.server:
-            # 兼容非Linux调试环境
-            logger.warning(f"Supervisor RPC不可用，忽略调用: {method_name}")
-            return [] if "getAllProcessInfo" in method_name else {}
-
         try:
-            # 根据方法名获取对应的调用对象
-            # 例如 "supervisor.getAllProcessInfo"
-            parts = method_name.split(".")
-            method = self.server
-            for part in parts:
-                method = getattr(method, part)
-            
             return await asyncio.to_thread(method, *args)
         except Exception as e:
             logger.error(f"RPC方法调用失败: {str(e)}")
@@ -146,54 +144,46 @@ class SupervisorService:
     async def get_all_processes(self) -> List[ProcessInfo]:
         """获取当前supervisor管理的所有进程信息"""
         try:
-            processes = await self._call_rpc("supervisor.getAllProcessInfo")
+            processes = await self._call_rpc(self.server.supervisor.getAllProcessInfo)
             return [ProcessInfo(**process) for process in processes]
         except Exception as e:
             logger.error(f"获取进程信息失败: {str(e)}")
-            if isinstance(e, BadRequestException):
-                raise
             raise AppException(f"获取进程信息失败: {str(e)}")
 
     async def stop_all_processes(self) -> SupervisorActionResult:
         """停止supervisor管理的所有进程"""
         try:
-            result = await self._call_rpc("supervisor.stopAllProcesses")
+            result = await self._call_rpc(self.server.supervisor.stopAllProcesses)
             return SupervisorActionResult(status="stopped", result=result)
         except Exception as e:
             logger.error(f"停止supervisor所有进程服务失败: {str(e)}")
-            if isinstance(e, BadRequestException):
-                raise
             raise AppException(f"停止supervisor所有进程服务失败: {str(e)}")
 
     async def shutdown(self) -> SupervisorActionResult:
         """关闭supervisord服务"""
         try:
-            shutdown_result = await self._call_rpc("supervisor.shutdown")
+            shutdown_result = await self._call_rpc(self.server.supervisor.shutdown)
             return SupervisorActionResult(status="shutdown", shutdown_result=shutdown_result)
         except Exception as e:
             logger.error(f"关闭supervisord服务失败: {str(e)}")
-            if isinstance(e, BadRequestException):
-                raise
             raise AppException(f"关闭supervisord服务失败: {str(e)}")
 
     async def restart(self) -> SupervisorActionResult:
         """重启Supervisor管理的进程"""
         try:
-            stop_result = await self._call_rpc("supervisor.stopAllProcesses")
-            start_result = await self._call_rpc("supervisor.startAllProcesses")
+            stop_result = await self._call_rpc(self.server.supervisor.stopAllProcesses)
+            start_result = await self._call_rpc(self.server.supervisor.startAllProcesses)
             return SupervisorActionResult(
                 status="restarted",
                 stop_result=stop_result,
                 start_result=start_result,
             )
-        except Exception as e:
-            logger.error(f"重启Supervisor进程服务失败: {str(e)}")
-            if isinstance(e, BadRequestException):
-                raise
-            raise AppException(f"重启Supervisor进程服务失败: {str(e)}")
+        except Exception as _:
+            logger.error(f"重启Supervisor进程服务失败")
+            raise AppException(f"重启Supervisor进程服务失败")
 
     async def activate_timeout(self, minutes: Optional[int] = None) -> SupervisorTimeout:
-        """传递指定分钟，并激活定时销毁任务同时关闭自动保活配置"""
+        """传递指定分钟，并激活定时销毁任务同时关闭自动保活"""
         # 1.获取超时分钟数
         setting = get_settings()
         timeout_minutes = minutes or setting.server_timeout_minutes
@@ -220,12 +210,10 @@ class SupervisorService:
         # 1.获取超时分钟数
         if minutes is None:
             raise BadRequestException("超时时间未配置, 请核实后重试")
-        
         if not self.shutdown_time:
             self.shutdown_time = datetime.now()
-            
         remaining = self.shutdown_time - datetime.now()
-        timeout_minutes = round(max(0.0, remaining.total_seconds()) / 60) + minutes
+        timeout_minutes = round(max(0, remaining.total_seconds()) / 60) + minutes
 
         # 2.更新超时配置
         self.timeout_active = True
@@ -275,10 +263,10 @@ class SupervisorService:
             return SupervisorTimeout(active=False)
 
         # 2.统计剩余秒数
-        remaining_seconds = 0.0
+        remaining_seconds = 0
         if self.shutdown_time:
             remaining = self.shutdown_time - datetime.now()
-            remaining_seconds = max(0.0, remaining.total_seconds())
+            remaining_seconds = max(0, remaining.total_seconds())
 
         return SupervisorTimeout(
             active=self.timeout_active,

@@ -1,9 +1,9 @@
+import os
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
-from alembic import context
 
 from app.infrastructure.models import Base
 
@@ -16,11 +16,17 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+database_url = os.environ.get("SQLALCHEMY_DATABASE_URI")
+if database_url:
+    database_url = database_url.replace("+asyncpg", "+psycopg2")
+    config.set_main_option("sqlalchemy.url", database_url)
+
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/20 10:59
+@Author  : thezehui@gmail.com
+@File    : message_queue.py
+"""
 from typing import Protocol, Any, Tuple
 
 
@@ -30,4 +37,8 @@ class MessageQueue(Protocol):
 
     async def delete_message(self, message_id: str) -> bool:
         """根据传递的消息id删除队列中指定的消息"""
+        ...
+
+    async def delete(self) -> None:
+        """删除整个消息队列及其底层存储"""
         ...

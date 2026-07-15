@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/18 0:54
+@Author  : thezehui@gmail.com
+@File    : event.py
+"""
 import uuid
 from datetime import datetime
 from enum import Enum

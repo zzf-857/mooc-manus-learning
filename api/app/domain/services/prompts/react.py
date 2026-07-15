@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/21 10:27
+@Author  : thezehui@gmail.com
+@File    : react.py
+"""
 # ReActAgent系统提示词模板
 REACT_SYSTEM_PROMPT = """
 你是一个任务执行智能体（Agent）, 你需要按照以下步骤完成任务:

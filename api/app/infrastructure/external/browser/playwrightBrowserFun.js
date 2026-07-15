@@ -125,7 +125,7 @@ const getInteractiveElements = () => {
             }
         } else if (element.innerText) {
             // 16.普通元素则提取内部文本并剔除多余空格 (如 <button>提交</button>)
-            text = element.innerText.trim().replace(/\s+/g, ' ');
+            text = element.innerText.trim().replace(/\\s+/g, ' ');
         } else if (element.alt) {
             // 17.图片按钮，取 alt 属性
             text = element.alt;

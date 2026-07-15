@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/11 23:30
+@Author  : thezehui@gmail.com
+@File    : shell.py
+"""
 import asyncio.subprocess
 from typing import Optional, List
 
@@ -18,9 +25,9 @@ class Shell(BaseModel):
     output: str = Field(..., description="会话输出")
     console_records: List[ConsoleRecord] = Field(default_factory=list, description="Shell会话中的控制记录列表")
 
-    # pydantic v2
+    # pydantic v2提供的写法，如果是v1可以通过创建一个内部类，名字为Config来解决
     model_config = ConfigDict(
-        arbitrary_types_allowed=True,
+        arbitrary_types_allowed=True,  # 允许Python原生对象或者自定义的对象作为字段类型
     )
 
 

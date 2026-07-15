@@ -1,0 +1,16 @@
+# Native-development override. It publishes infrastructure only on loopback so
+# uvicorn/npm can run on the Windows host without exposing services to the LAN.
+services:
+  manus-redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  manus-postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  manus-sandbox:
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:9222:9222"
+      - "127.0.0.1:5901:5901"

@@ -1,10 +1,11 @@
 # Project Agent Instructions
 
-The active Git repository for this learning project is `api/`.
+The active Git repository is the monorepo root (`.`). It contains `api/`,
+`ui/`, `sandbox/`, deployment files, scripts, and learning documentation.
 
-Before reviewing or changing anything inside this project, read:
+Before reviewing or changing anything inside `api/`, read its additional
+learning-project instructions:
 
 ```text
 api/AGENTS.md
 ```
-

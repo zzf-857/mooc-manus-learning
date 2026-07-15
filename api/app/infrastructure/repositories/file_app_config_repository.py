@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/17 10:56
+@Author  : thezehui@gmail.com
+@File    : file_app_config_repository.py
+"""
 import logging
 from pathlib import Path
 from typing import Optional

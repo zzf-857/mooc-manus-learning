@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/27 14:35
+@Author  : thezehui@gmail.com
+@File    : app_config.py
+"""
 from typing import List
 
 from pydantic import BaseModel, Field

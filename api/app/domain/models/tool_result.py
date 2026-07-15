@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/18 15:14
+@Author  : thezehui@gmail.com
+@File    : tool_result.py
+"""
 from typing import Optional, TypeVar, Generic
 
 from pydantic import BaseModel

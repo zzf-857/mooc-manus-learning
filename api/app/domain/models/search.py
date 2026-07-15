@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/24 14:56
+@Author  : thezehui@gmail.com
+@File    : search.py
+"""
 from typing import Optional, List
 
 from pydantic import BaseModel, Field

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/10 0:40
+@Author  : thezehui@gmail.com
+@File    : sandbox.py
+"""
 from typing import Protocol, Optional, BinaryIO, Self
 
 from app.domain.external.browser import Browser
@@ -90,7 +97,7 @@ class Sandbox(Protocol):
             file_data: BinaryIO,
             filepath: str,
             filename: str = None,
-        ) -> ToolResult:
+    ) -> ToolResult:
         """根据文件源数据+路径+文件名将文件上传到沙箱中"""
         ...
 

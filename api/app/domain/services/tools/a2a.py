@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/09 10:14
+@Author  : thezehui@gmail.com
+@File    : a2a.py
+"""
 import logging
 import uuid
 from contextlib import AsyncExitStack
@@ -12,33 +19,37 @@ from .base import BaseTool, tool
 
 logger = logging.getLogger(__name__)
 
-
 """
-A2A客户端管理器的开发思路：
-1.在Agent执行过程中，有可能需要多次调用Remote-Agent，
-  但是a2a中的agent-card.json请求是网络io，相对耗时，
-  所以需要缓存agent-card的相关信息，只有在初始化A2A客户端的时候才初始化一次，
-  更新a2a服务器的时候更新，清除a2a客户端管理器时删除；
-2.在前端UI交互中，无论A2A服务器是否启动，都会展示Card信息，
-  但是呢，在执行/规划Agent中，我们只传递启用的A2A服务，所以A2A客户端管理器必须动态接受配置；
-3.一个A2A客户端同时管理多个Agent，但是不同的A2A服务有可能他们的name是一样的，
-  需要考虑传递给Agent信息时的唯一性，会配置多一个唯一的id；
-4.由于使用httpx客户端，这个客户端需要创建上下文/释放资源，所以可以使用AsyncExitStack来管理
-  异步上下文，避免大量使用with..as的嵌套组合；
-5.A2AClientManager的初始化非常耗时，一次请求中只初始化一次；
-6.A2A配置是写在config.yaml中的并直接暴露给开发者，有可能开发者会手动修改config.yaml
-  所以在使用的时候，最多需要做多一次校验；
-7.A2A客户端管理器只实现两个方法，一个是get_remote_agent_cards、call_remote_agent；
-8.A2A客户端管理器停止时必须清除对应资源，涵盖了缓存，异步上下文管理器避免资源泄露；
+A2A客户端管理器的开发思路:
+1.在Agent执行过程中, 有可能需要多次调用Remote-Agent，
+  但是a2a中的agent-card.json请求是网络io, 相对耗时，
+  所以需要缓存agent-card的相关信息, 只有在初始化A2A客户端的时候才初始化一次,
+  更新a2a服务器的时候更新, 清除a2a客户端管理器时删除;
+2.在前端UI交互中, 无论A2A服务器是否启动, 都会展示Card信息,
+  但是呢, 在执行/规划Agent中, 我们只传递启用的A2A服务, 所以A2A客户端管理器必须动态接受配置;
+3.一个A2A客户端会同时管理多个Agent, 但是不同的A2A服务有可能他们的name是一样的，
+  需要考虑传递给Agent信息时的唯一性, 会配置多一个唯一的id;
+4.由于使用httpx客户端, 这个客户端需要创建上下文/释放资源, 所以可以使用AsyncExitStack来管理
+  异步上下文, 避免大量使用with..as的嵌套组合;
+5.A2AClientManager的初始化非常耗时, 一次请求中只初始化一次;
+6.A2A配置是写在config.yaml中的并直接暴露给开发者, 有可能开发者会手动修改config.yaml
+  所以在使用的时候, 最多需要做多一次校验;
+7.A2A客户端管理器只实现两个方法, 一个是get_remote_agent_cards、call_remote_agent;
+8.A2A客户端管理器停止时必须清除对应资源, 涵盖了缓存, 异步上下文管理器避免资源泄露;
 """
 
 
 class A2AClientManager:
     """A2A客户端管理器"""
 
-    def __init__(self, a2a_config: Optional[A2AConfig] = None) -> None:
+    def __init__(
+            self,
+            a2a_config: Optional[A2AConfig] = None,
+            include_disabled: bool = False,
+    ) -> None:
         """构造函数，完成A2A客户端的初始化"""
-        self._a2a_config = a2a_config  # 配置
+        self._a2a_config = a2a_config or A2AConfig()  # 配置
+        self._include_disabled = include_disabled
         self._exit_stack: AsyncExitStack = AsyncExitStack()  # 上下文管理器
         self._httpx_client: Optional[httpx.AsyncClient] = None  # httpx客户端
         self._agent_cards: Dict[str, Any] = {}  # agent卡片
@@ -74,6 +85,10 @@ class A2AClientManager:
         """根据配置连接所有a2a服务器获取AgentCard信息"""
         # 1.循环遍历所有的a2a服务
         for a2a_server_config in self._a2a_config.a2a_servers:
+            if not a2a_server_config.enabled and not self._include_disabled:
+                logger.info(f"跳过已禁用的A2A服务: {a2a_server_config.id}")
+                continue
+
             try:
                 # 2.调用httpx客户端发起请求
                 agent_card_response = await self._httpx_client.get(
@@ -97,6 +112,9 @@ class A2AClientManager:
 
         # 2.Agent存在，则取出端点信息
         agent_card = self._agent_cards.get(agent_id, {})
+        if not agent_card.get("enabled", False):
+            return ToolResult(success=False, message=f"远程Agent[{agent_id}]已禁用")
+
         url = agent_card.get("url", "")
 
         # 3.判断端点是否存在
@@ -158,7 +176,7 @@ class A2ATool(BaseTool):
         """初始化A2A工具包"""
         # 1.判断下是否已初始化
         if not self._initialized:
-            # 2.初始化A2A客户端管理器
+            # 2.Manager默认跳过禁用服务；保留完整配置便于统一审计和后续刷新
             self.manager = A2AClientManager(a2a_config)
             await self.manager.initialize()
             self._initialized = True
@@ -174,6 +192,8 @@ class A2ATool(BaseTool):
         # 1.重组结构，将id填充到agent_card中
         agent_cards = []
         for id, agent_card in self.manager.agent_cards.items():
+            if not agent_card.get("enabled", False):
+                continue
             agent_cards.append({
                 "id": id,
                 **agent_card,

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/17 10:47
+@Author  : thezehui@gmail.com
+@File    : app_config_service.py
+"""
 import logging
 import uuid
 from typing import List
@@ -153,7 +160,12 @@ class AppConfigService:
 
         # 2.构建a2a客户端管理器，对配置信息不过滤
         a2a_servers = []
-        a2a_client_manager = A2AClientManager(app_config.a2a_config)
+        # 配置页需要展示禁用项，显式允许读取它们的Agent Card；
+        # Agent执行路径使用Manager默认值，不会连接禁用服务。
+        a2a_client_manager = A2AClientManager(
+            app_config.a2a_config,
+            include_disabled=True,
+        )
 
         try:
             # 3.初始化a2a客户端管理器
@@ -197,7 +209,7 @@ class AppConfigService:
         # 3.如果存在则更新数据
         app_config.a2a_config.a2a_servers[idx].enabled = enabled
         self.app_config_repository.save(app_config)
-        return app_config.mcp_config
+        return app_config.a2a_config
 
     async def delete_a2a_server(self, a2a_id: str) -> A2AConfig:
         """根据传递的id删除指定的a2a服务"""
@@ -216,4 +228,4 @@ class AppConfigService:
         # 3.删除a2a服务器
         del app_config.a2a_config.a2a_servers[idx]
         self.app_config_repository.save(app_config)
-        return app_config.mcp_config
+        return app_config.a2a_config

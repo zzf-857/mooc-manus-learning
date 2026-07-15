@@ -1,0 +1,11 @@
+# Advanced mode: let the API create one sandbox container per session.
+# This mounts Docker's control socket into the API and therefore grants it
+# host-level Docker privileges. Use only on a trusted local development machine.
+services:
+  manus-api:
+    environment:
+      SANDBOX_ADDRESS: ""
+      SANDBOX_IMAGE: mooc-manus-sandbox:local
+      SANDBOX_NETWORK: manus-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

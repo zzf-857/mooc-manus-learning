@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/10 17:21
+@Author  : thezehui@gmail.com
+@File    : service_dependencies.py
+"""
 from functools import lru_cache
 
 from app.services.file import FileService

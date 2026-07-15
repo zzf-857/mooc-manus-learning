@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/18 15:16
+@Author  : thezehui@gmail.com
+@File    : base.py
+"""
 import inspect
 from typing import Dict, Any, List, Callable
 
@@ -105,5 +112,5 @@ class BaseTool:
                 # 4.调用方法获取工具结果
                 return await method(**filtered_kwargs)
 
-        # 5.如果循环结束还没有找到工具并调用则抛出错误
-        return ValueError(f"工具[{tool_name}]未找到")
+        # 5.如果循环结束还没有找到工具，保持统一的ToolResult返回契约
+        return ToolResult(success=False, message=f"工具[{tool_name}]未找到")

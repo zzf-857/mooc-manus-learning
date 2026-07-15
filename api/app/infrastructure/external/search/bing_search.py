@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/24 15:19
+@Author  : thezehui@gmail.com
+@File    : bing_search.py
+"""
 import logging
 import re
 import time
@@ -74,7 +81,7 @@ class BingSearchEngine(SearchEngine):
                 search_results = []
                 result_items = soup.find_all("li", class_="b_algo")
 
-                # 11.循环遍历所有匹配 of dom
+                # 11.循环遍历所有匹配的dom
                 for item in result_items:
                     try:
                         # 12.定义变量存储数据
@@ -206,3 +213,19 @@ class BingSearchEngine(SearchEngine):
                 message=f"Bing搜索出错: {str(e)}",
                 data=error_results,
             )
+
+
+if __name__ == "__main__":
+    import asyncio
+
+
+    async def test():
+        search_engine = BingSearchEngine()
+        result = await search_engine.invoke("小米股价", "past_day")
+
+        print(result)
+        for item in result.data.results:
+            print(item)
+
+
+    asyncio.run(test())

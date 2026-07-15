@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/05 14:30
+@Author  : thezehui@gmail.com
+@File    : playwright_browser_fun.py
+"""
 # 获取页面的课时内容js代码
 GET_VISIBLE_CONTENT_FUNC = """() => {
     // 1.定义变量存储所有可视元素+视口宽高

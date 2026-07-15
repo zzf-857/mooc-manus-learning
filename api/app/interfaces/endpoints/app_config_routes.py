@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/17 10:39
+@Author  : thezehui@gmail.com
+@File    : app_config_routes.py
+"""
 import logging
 from typing import Optional, Dict
 
@@ -65,7 +72,7 @@ async def get_agent_config(
     summary="更新Agent通用配置信息",
     description="更新Agent通用配置信息"
 )
-async def update_agent_config(
+async def update_llm_config(
         new_agent_config: AgentConfig,
         app_config_service: AppConfigService = Depends(get_app_config_service)
 ) -> Response[AgentConfig]:

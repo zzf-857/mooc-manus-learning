@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/20 9:58
+@Author  : thezehui@gmail.com
+@File    : message.py
+"""
 from typing import List
 
 from pydantic import BaseModel, Field

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/16 11:38
+@Author  : thezehui@gmail.com
+@File    : app_config.py
+"""
 import uuid
 from enum import Enum
 from typing import Dict, Optional, List, Any

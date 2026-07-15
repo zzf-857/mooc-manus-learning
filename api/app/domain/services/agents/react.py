@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/21 10:26
+@Author  : thezehui@gmail.com
+@File    : react.py
+"""
 import logging
 from typing import AsyncGenerator
 
@@ -89,8 +96,9 @@ class ReActAgent(BaseAgent):
             # 15.其他场景将事件直接返回
             yield event
 
-        # 16.循环迭代完成后代表子步骤已实现，需要更新状态
-        step.status = ExecutionStatus.COMPLETED
+        # 16.仅在步骤仍处于运行中时兜底标记完成，避免覆盖前面记录的失败状态
+        if step.status == ExecutionStatus.RUNNING:
+            step.status = ExecutionStatus.COMPLETED
 
     async def summarize(self) -> AsyncGenerator[BaseEvent, None]:
         """调用Agent汇总历史的消息并生成最终回复+附件"""

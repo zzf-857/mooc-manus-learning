@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/21 17:35
+@Author  : thezehui@gmail.com
+@File    : redis_stream_task.py
+"""
 import asyncio
 import logging
 import uuid
@@ -13,6 +20,10 @@ logger = logging.getLogger(__name__)
 class RedisStreamTask(Task):
     """基于Redis流的任务类"""
 
+    INPUT_STREAM_MAX_LENGTH = 1_000
+    OUTPUT_STREAM_MAX_LENGTH = 10_000
+    STREAM_TTL_SECONDS = 24 * 60 * 60
+
     # 定义一个全局变量用于存储所有已注册的任务
     _task_registry: Dict[str, "RedisStreamTask"] = {}
 
@@ -21,12 +32,22 @@ class RedisStreamTask(Task):
         self._task_runner = task_runner
         self._id = str(uuid.uuid4())
         self._execution_task: Optional[asyncio.Task] = None  # 定义在后台执行的任务
+        self._dispose_lock = asyncio.Lock()
+        self._disposed = False
 
         input_stream_name = f"task:input:{self._id}"
         output_stream_name = f"task:output:{self._id}"
 
-        self._input_stream = RedisStreamMessageQueue(input_stream_name)
-        self._output_stream = RedisStreamMessageQueue(output_stream_name)
+        self._input_stream = RedisStreamMessageQueue(
+            input_stream_name,
+            max_length=self.INPUT_STREAM_MAX_LENGTH,
+            ttl_seconds=self.STREAM_TTL_SECONDS,
+        )
+        self._output_stream = RedisStreamMessageQueue(
+            output_stream_name,
+            max_length=self.OUTPUT_STREAM_MAX_LENGTH,
+            ttl_seconds=self.STREAM_TTL_SECONDS,
+        )
 
         # 将当前类实例注册到全局变量中
         RedisStreamTask._task_registry[self._id] = self
@@ -79,6 +100,49 @@ class RedisStreamTask(Task):
         self._cleanup_registry()
         return True
 
+    async def dispose(self) -> None:
+        """停止单个任务，并释放其运行器与Redis Stream资源。"""
+        async with self._dispose_lock:
+            if self._disposed:
+                return
+
+            execution_task = self._execution_task
+            self.cancel()
+
+            # cancel()只发出取消信号；等待后台协程的finally真正执行完毕，
+            # 防止任务仍在访问沙箱时就开始销毁沙箱。
+            if (
+                    execution_task is not None
+                    and execution_task is not asyncio.current_task()
+                    and not execution_task.done()
+            ):
+                try:
+                    await execution_task
+                except asyncio.CancelledError:
+                    pass
+
+            runner_error: BaseException | None = None
+            try:
+                if self._task_runner:
+                    await self._task_runner.destroy()
+            except BaseException as exc:
+                runner_error = exc
+
+            stream_results = await asyncio.gather(
+                self._input_stream.delete(),
+                self._output_stream.delete(),
+                return_exceptions=True,
+            )
+            self._cleanup_registry()
+            self._disposed = True
+
+            if runner_error is not None:
+                raise runner_error
+
+            stream_errors = [result for result in stream_results if isinstance(result, BaseException)]
+            if stream_errors:
+                raise RuntimeError(f"任务[{self._id}]消息流清理失败") from stream_errors[0]
+
     @property
     def input_stream(self) -> MessageQueue:
         return self._input_stream
@@ -107,9 +171,15 @@ class RedisStreamTask(Task):
 
     @classmethod
     async def destroy(cls) -> None:
-        for task_id in list(RedisStreamTask._task_registry.keys()):
-            task = RedisStreamTask._task_registry[task_id]
-            task.cancel()
-            if task._task_runner:
-                await task._task_runner.destroy()
+        # 使用快照，避免dispose()/cancel()从注册表移除任务时修改正在迭代的字典。
+        tasks = list(cls._task_registry.values())
+        results = await asyncio.gather(
+            *(task.dispose() for task in tasks),
+            return_exceptions=True,
+        )
+
         cls._task_registry.clear()
+
+        errors = [result for result in results if isinstance(result, BaseException)]
+        if errors:
+            raise RuntimeError(f"{len(errors)}个任务资源销毁失败") from errors[0]

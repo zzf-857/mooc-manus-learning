@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/10 17:18
+@Author  : thezehui@gmail.com
+@File    : file.py
+"""
 import os.path
 
 from fastapi import APIRouter, Depends, UploadFile, File, Form
@@ -127,7 +134,7 @@ async def search_in_file(
 async def find_files(
         request: FileFindRequest,
         file_service: FileService = Depends(get_file_service),
-) -> Response[FileFindResult]:
+) -> Response[FileFindRequest]:
     """根据传递的文件夹+glob文件规则查找文件列表"""
     result = await file_service.find_files(
         dir_path=request.dir_path,

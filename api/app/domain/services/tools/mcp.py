@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/27 9:43
+@Author  : thezehui@gmail.com
+@File    : mcp.py
+"""
 import logging
 import os
 from contextlib import AsyncExitStack
@@ -12,6 +19,28 @@ from app.domain.models.app_config import MCPConfig, MCPServerConfig, MCPTranspor
 from app.domain.models.tool_result import ToolResult
 from .base import BaseTool
 
+"""
+MCP客户端管理器的开发思路:
+1.在Agent执行的过程中，有可能需要调用多次工具,
+  但是因为MCP工具的每次获取都需要调用客户端会话的list_tools()方法,
+  非常耗时, 所以需要我们缓存工具的参数信息, 只有在初始化的时候才调用一次,
+  并且在销毁MCP客户端管理器的时候一并清除;
+2.在前端UI交互中, 无论MCP服务是否启动, 都会显示工具列表信息,
+  但是在Agent执行的过程中, 我们只会传递已启动的MCP服务,
+  所以对于MCP客户端管理器来说, 可以根据接收的MCP配置的差异加载不同的服务器,
+  而不是仅从配置文件中读取数据;
+3.MCP客户端管理器会同时管理多个MCP服务, 有可能有stdio、sse、streamable_http等传输协议.
+  需要根据传输协议的不同来创建客户端会话(ClientSession), 同时缓存会话;
+4.另外有可能有一些环境变量是存储在我们整个系统中的, 在初始化MCP服务的时候，需要将传递进来的
+  环境变量与系统的环境变量进行合并后传递给MCP服务;
+5.使用AsyncExitStack异步上下文管理器来管理上下文，避免使用with多层嵌套;
+6.MCPClientManager的初始化非常耗时, 所以需要有机制可以判断避免重复初始化;
+7.由于config.yaml是直接暴露在项目中的, 所以在使用config.yaml进行初始化的时候必须二次校验;
+8.同时缓存ClientSession+Tool-Schema, 一个是客户端会话, 一个是工具参数声明;
+9.MCP客户端管理器在清除/停止使用的时候, 必须关闭异步上下文管理器、清除资源(ClientSession、Tool-Schema)、
+  初始化标识等, 从而避免资源泄露;
+"""
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,7 +49,7 @@ class MCPClientManager:
 
     def __init__(self, mcp_config: Optional[MCPConfig] = None) -> None:
         """构造函数，完成MCP客户端管理器的初步初始化"""
-        self._mcp_config: MCPConfig = mcp_config  # mcp配置信息
+        self._mcp_config: MCPConfig = mcp_config or MCPConfig()  # mcp配置信息
         self._exit_stack: AsyncExitStack = AsyncExitStack()  # 异步上下文管理器
         self._clients: Dict[str, ClientSession] = {}  # 缓存的客户端会话
         self._tools: Dict[str, List[Tool]] = {}  # 缓存的MCP工具参数声明
@@ -50,13 +79,19 @@ class MCPClientManager:
 
     async def _connect_mcp_servers(self) -> None:
         """根据配置连接所有MCP服务"""
-        # 1.循环遍历传递进来的所有MCP服务器，不用理会enabled的状态，因为在外部会执行筛选
+        # 1.循环遍历传递进来的所有MCP服务器
         for server_name, server_config in self._mcp_config.mcpServers.items():
+            # 2.禁用状态必须在执行层生效，避免仅依赖UI隐藏或调用方预过滤
+            if not server_config.enabled:
+                self._tools[server_name] = []
+                logger.info(f"跳过已禁用的MCP服务器: {server_name}")
+                continue
+
             try:
-                # 2.根据服务名字+服务配置连接到MCP服务器
+                # 3.根据服务名字+服务配置连接到MCP服务器
                 await self._connect_mcp_server(server_name, server_config)
             except Exception as e:
-                # 3.记录错误日志并跳过错误的MCP服务器
+                # 4.记录错误日志并跳过错误的MCP服务器
                 logger.error(f"连接MCP服务器[{server_name}]出错: {str(e)}")
                 continue
 
@@ -94,8 +129,8 @@ class MCPClientManager:
         # 3.构建stdio连接参数
         server_parameters = StdioServerParameters(
             command=command,
-            args=args,
-            env={**os.environ, **env},
+            args=args or [],
+            env={**os.environ, **(env or {})},
         )
 
         try:
@@ -249,6 +284,12 @@ class MCPClientManager:
 
                 # 4.判断工具名字是否以该服务名字为开头
                 if tool_name.startswith(f"{expected_prefix}_"):
+                    server_config = self._mcp_config.mcpServers[server_name]
+                    if not server_config.enabled:
+                        return ToolResult(
+                            success=False,
+                            message=f"MCP服务器[{server_name}]已禁用",
+                        )
                     # 5.取出原始的服务名字+工具名字
                     original_server_name = server_name
                     original_tool_name = tool_name[len(expected_prefix) + 1:]

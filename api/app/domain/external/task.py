@@ -1,5 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/20 10:50
+@Author  : thezehui@gmail.com
+@File    : task.py
+"""
 from abc import ABC, abstractmethod
 from typing import Protocol, Optional
+
 from app.domain.external.message_queue import MessageQueue
 
 
@@ -13,7 +21,7 @@ class TaskRunner(ABC):
 
     @abstractmethod
     async def destroy(self) -> None:
-        """销毁任务并释放资源，包括：关闭网络连接、释放内存、清理临时内存、清理后台进程等"""
+        """销毁任务并释放资源，包括：关闭网络链接、释放内存、清理临时内存、清理后台进程等"""
         raise NotImplementedError
 
     @abstractmethod
@@ -31,6 +39,10 @@ class Task(Protocol):
 
     def cancel(self) -> bool:
         """取消当前任务"""
+        ...
+
+    async def dispose(self) -> None:
+        """取消任务并等待结束，然后释放运行器和消息队列资源"""
         ...
 
     @property

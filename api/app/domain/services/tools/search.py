@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/25 10:14
+@Author  : thezehui@gmail.com
+@File    : search.py
+"""
 from typing import Optional
 
 from app.domain.external.search import SearchEngine
@@ -10,10 +17,11 @@ class SearchTool(BaseTool):
     """搜索工具包，提供与搜索引擎交互的能力"""
     name: str = "search"
 
-    def __init__(self, search_engine: SearchEngine) -> None:
+    def __init__(self, search_engine: SearchEngine, max_search_results: Optional[int] = None) -> None:
         """构造函数，完成搜索工具包的初始化"""
         super().__init__()
         self.search_engine = search_engine
+        self.max_search_results = max_search_results
 
     @tool(
         name="search_web",
@@ -33,4 +41,7 @@ class SearchTool(BaseTool):
     )
     async def search_web(self, query: str, date_range: Optional[str] = None) -> ToolResult[SearchResults]:
         """调用搜索引擎获取搜索结果后返回"""
-        return await self.search_engine.invoke(query, date_range)
+        result = await self.search_engine.invoke(query, date_range)
+        if result.data is not None and self.max_search_results is not None:
+            result.data.results = result.data.results[:self.max_search_results]
+        return result

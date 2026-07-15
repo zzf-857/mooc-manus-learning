@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/05 10:17
+@Author  : thezehui@gmail.com
+@File    : playwright_browser.py
+"""
 import asyncio
 import logging
 from typing import Optional, List, Any
@@ -352,6 +359,7 @@ class PlaywrightBrowser(BrowserProtocol):
                 element = await self._get_element_by_id(index)
                 if not element:
                     return ToolResult(success=False, message=f"输入文本失败, 该元素不存在")
+
                 try:
                     # 5.先清空原始输入框的内容然后再填充
                     await element.fill("")

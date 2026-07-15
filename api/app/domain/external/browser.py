@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/03 0:20
+@Author  : thezehui@gmail.com
+@File    : browser.py
+"""
 from typing import Protocol, Optional
 
 from app.domain.models.tool_result import ToolResult

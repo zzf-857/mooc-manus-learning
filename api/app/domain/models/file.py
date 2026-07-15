@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/18 17:37
+@Author  : thezehui@gmail.com
+@File    : file.py
+"""
 import uuid
 
 from pydantic import BaseModel, Field
@@ -12,5 +19,3 @@ class File(BaseModel):
     extension: str = ""  # 扩展名
     mime_type: str = ""  # mime-type类型
     size: int = 0  # 文件大小，单位为字节
-
-

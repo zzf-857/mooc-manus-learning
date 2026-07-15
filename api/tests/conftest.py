@@ -1,15 +1,31 @@
-import pytest
+from collections.abc import Iterator
 
+import pytest
 from fastapi.testclient import TestClient
+
+from app.application.services.status_service import StatusService
+from app.domain.models.health_status import HealthStatus
+from app.interfaces.service_dependencies import get_status_service
 from app.main import app
 
 
-@pytest.fixture(scope="session")
-def client() -> TestClient:
-    """
-    创建一个可供所有测试用例使用的  TestClient客户端
-    scope="session"  标识这个fixture 在整个测试用例中只会实例一次，这样可以提高效率
-    :return: TestClient
-    """
-    with TestClient(app) as c:
-        yield c
+@pytest.fixture()
+def anyio_backend() -> str:
+    return "asyncio"
+
+
+class HealthyChecker:
+    async def check(self) -> HealthStatus:
+        return HealthStatus(service="test", status="ok", details="isolated unit test")
+
+
+@pytest.fixture()
+def client() -> Iterator[TestClient]:
+    """Create a fast unit-test client without starting Postgres/Redis/COS."""
+    app.dependency_overrides[get_status_service] = lambda: StatusService([HealthyChecker()])
+    client = TestClient(app)
+    try:
+        yield client
+    finally:
+        client.close()
+        app.dependency_overrides.clear()

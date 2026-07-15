@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/17 10:48
+@Author  : thezehui@gmail.com
+@File    : app_config_repository.py
+"""
 from typing import Protocol, Optional
 
 from app.domain.models.app_config import AppConfig

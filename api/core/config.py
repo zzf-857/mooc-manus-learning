@@ -1,21 +1,29 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/14 10:44
+@Author  : thezehui@gmail.com
+@File    : config.py
+"""
 from functools import lru_cache
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """MoocManus后端中控数据，从.env或者环境变量中加载数据"""
+    """MoocManus后端中控配置信息，从.env或者环境变量中加载数据"""
 
     # 项目基础配置
-    env: str = 'development'
-    log_level: str = 'INFO'
+    env: str = "development"
+    log_level: str = "INFO"
     app_config_filepath: str = "config.yaml"
 
     # 数据库相关配置
-    sqlalchemy_database_uri: str = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/manus"
+    sqlalchemy_database_uri: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/manus"
 
     # Redis缓存配置
-    redis_host: str = "127.0.0.1"
+    redis_host: str = "localhost"
     redis_port: int = 6379
     redis_db: int = 0
     redis_password: str | None = None
@@ -28,6 +36,24 @@ class Settings(BaseSettings):
     cos_bucket: str = ""
     cos_domain: str = ""
 
+    # 文件存储配置。local 让新手无需云账号即可跑通上传/下载；cos 用于生产或云端。
+    file_storage_backend: str = "local"
+    local_storage_path: str = ".data/files"
+
+    # Sandbox配置
+    sandbox_address: Optional[str] = None
+    sandbox_image: Optional[str] = None
+    sandbox_name_prefix: Optional[str] = None
+    sandbox_ttl_minutes: Optional[int] = 60
+    sandbox_network: Optional[str] = None
+    sandbox_chrome_args: Optional[str] = ""
+    sandbox_https_proxy: Optional[str] = None
+    sandbox_http_proxy: Optional[str] = None
+    sandbox_no_proxy: Optional[str] = None
+    sandbox_memory_limit: str = "2g"
+    sandbox_cpus: float = 2.0
+    sandbox_pids_limit: int = 512
+
     # 使用pydantic v2的写法来完成环境变量信息的告知
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -36,8 +62,7 @@ class Settings(BaseSettings):
     )
 
 
-# 在整个生命周期内只会调用一次，避免频繁读取本地文件
-@lru_cache
+@lru_cache()
 def get_settings() -> Settings:
     """获取当前MoocManus项目的配置信息，并对内容进行缓存，避免重复读取"""
     settings = Settings()

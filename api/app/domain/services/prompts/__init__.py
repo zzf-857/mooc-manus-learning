@@ -1,1 +1,7 @@
-from .system import SYSTEM_PROMPT
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/20 10:37
+@Author  : thezehui@gmail.com
+@File    : __init__.py.py
+"""

@@ -10,7 +10,7 @@ ENV UV_LINK_MODE=copy
 # 3.安装基础工具+OpenSSH Server以实现SSH远程环境
 # mkdir /var/run/sshd是SSH服务启动必须的目录
 RUN apt-get update && apt-get install -y \
-    ca-certificates git curl openssh-server supervisor \
+    ca-certificates git curl openssh-server\
     && rm -rf /var/lib/apt/lists/* \
     && mkdir /var/run/sshd
 

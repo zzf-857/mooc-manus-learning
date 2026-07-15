@@ -1,0 +1,135 @@
+name: mooc-manus
+
+services:
+  manus-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - manus-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  manus-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-manus_local_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-manus}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - manus-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-manus}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  manus-sandbox:
+    build:
+      context: ./sandbox
+      dockerfile: Dockerfile
+    image: mooc-manus-sandbox:local
+    init: true
+    restart: unless-stopped
+    shm_size: 1gb
+    mem_limit: ${SANDBOX_MEMORY_LIMIT:-2g}
+    cpus: ${SANDBOX_CPUS:-2}
+    pids_limit: ${SANDBOX_PIDS_LIMIT:-512}
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - manus-network
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/supervisor/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 45s
+
+  manus-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./api/config.yaml:/data/config.yaml
+      - api_files:/data/files
+    depends_on:
+      manus-redis:
+        condition: service_healthy
+      manus-postgres:
+        condition: service_healthy
+      manus-sandbox:
+        condition: service_healthy
+    networks:
+      - manus-network
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  manus-ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: /api
+    restart: unless-stopped
+    depends_on:
+      manus-api:
+        condition: service_healthy
+    networks:
+      - manus-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  manus-nginx:
+    image: nginx:1.29-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${NGINX_PORT:-8088}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      manus-ui:
+        condition: service_healthy
+      manus-api:
+        condition: service_healthy
+    networks:
+      - manus-network
+
+volumes:
+  redis_data:
+  postgres_data:
+  api_files:
+
+networks:
+  manus-network:
+    name: manus-network
+    driver: bridge

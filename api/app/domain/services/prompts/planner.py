@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/20 15:34
+@Author  : thezehui@gmail.com
+@File    : planner.py
+"""
 # 规划Agent系统预设prompt
 PLANNER_SYSTEM_PROMPT = """
 你是一个任务规划智能体 (Task Planner Agent), 你需要为任务创建或更新计划:
@@ -72,7 +79,7 @@ JSON 输出示例:
 {attachments}
 """
 
-# 更新Plan规划提示词模板，内部有plan and step占位符
+# 更新Plan规划提示词模板，内部有plan和step占位符
 UPDATE_PLAN_PROMPT = """
 你正在更新计划，你需要根据步骤的执行结果来更新计划：
 {step}

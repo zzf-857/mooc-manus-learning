@@ -1,6 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/17 15:10
+@Author  : thezehui@gmail.com
+@File    : plan.py
+"""
 import uuid
 from enum import Enum
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 

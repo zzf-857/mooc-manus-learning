@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/16 10:46
+@Author  : thezehui@gmail.com
+@File    : logging.py
+"""
 import logging
 import sys
 
@@ -12,39 +19,25 @@ def setup_logging():
     # 2.获取根日志处理器
     root_logger = logging.getLogger()
 
-    # 3. 设置根日志处理器等级
+    # 3.清除已有的handlers，避免uvicorn的dictConfig重配置后产生冲突或重复
+    root_logger.handlers.clear()
+
+    # 4.设置根日志处理器等级
     log_level = getattr(logging, settings.log_level)
     root_logger.setLevel(log_level)
 
-    # 4.日志输出格式定义
+    # 5.日志输出格式定义
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-
-    # 5.创建控制台日志输出处理器
-    console_handler = logging.StreamHandler(sys.stdout)
+    # 6.创建控制台日志输出处理器(使用stderr，stderr在Python中始终无缓冲，Docker中更可靠)
+    console_handler = logging.StreamHandler(sys.stderr)
     console_handler.setFormatter(formatter)
     console_handler.setLevel(log_level)
 
-
-    # 6.将控制台日志处理器添加到根日志处理器中
+    # 7.将控制台日志处理器添加到根日志处理器中
     root_logger.addHandler(console_handler)
 
     root_logger.info("日志系统初始化完成")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/10 23:56
+@Author  : thezehui@gmail.com
+@File    : exceptions.py
+"""
 import logging
 from typing import Any
 

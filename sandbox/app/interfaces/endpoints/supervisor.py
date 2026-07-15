@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/10 17:19
+@Author  : thezehui@gmail.com
+@File    : supervisor.py
+"""
 from typing import List
 
 from fastapi import APIRouter, Depends

@@ -1,33 +1,40 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/17 10:49
+@Author  : thezehui@gmail.com
+@File    : status_routes.py
+"""
 import logging
-
-
 from typing import List
-from fastapi import APIRouter
-from fastapi import Depends
-from app.interfaces.schemas.base import Response
-from app.domain.models.health_status import HealthStatus
-from app.application.services.status_service import StatusService
-from app.interfaces.service_dependencies import get_status_service
 
+from fastapi import APIRouter, Depends
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+
+from app.application.services.status_service import StatusService
+from app.domain.models.health_status import HealthStatus
+from app.interfaces.schemas import Response
+from app.interfaces.service_dependencies import get_status_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/status", tags=["状态模块"])
 
 
-
 @router.get(
     path="",
     response_model=Response[List[HealthStatus]],
-    summary = "系统健康检查",
-    description = "检查系统的postgres、redis、fastapi等组件的状态信息。"
+    summary="系统健康检查",
+    description="检查系统的postgres、redis、fastapi等组件的状态信息。"
 )
 async def get_status(
-        status_service: StatusService = Depends(get_status_service)
+        status_service: StatusService = Depends(get_status_service),
 ) -> Response:
-    """系统健康检查，检查呢postgres/redis/fastapi/cos等服务"""
-    statuses = await status_service.check_all()
+    """系统健康检查，检查postgres/redis/fastapi/cos等服务"""
+    statues = await status_service.check_all()
 
-    if any(item.status == "error" for item in statuses):
-        return Response.fail(503, "系统存在服务异常", statuses)
+    if any(item.status == "error" for item in statues):
+        payload = Response.fail(503, "系统存在服务异常", statues)
+        return JSONResponse(status_code=503, content=jsonable_encoder(payload))
 
-    return Response.success(msg="系统健康检查成功", data=statuses)
+    return Response.success(msg="系统健康检查成功", data=statues)

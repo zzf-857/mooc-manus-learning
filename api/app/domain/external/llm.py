@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/5/17 17:14
+@Author  : thezehui@gmail.com
+@File    : llm.py
+"""
 from typing import Protocol, List, Dict, Any
 
 
@@ -10,8 +17,9 @@ class LLM(Protocol):
             tools: List[Dict[str, Any]] = None,
             response_format: Dict[str, Any] = None,
             tool_choice: str = None,
-    ):
+    ) -> Dict[str, Any]:
         """传递消息列表、工具列表、响应格式、工具选择策略调用LLM接口"""
+        ...
 
     @property
     def model_name(self) -> str:
@@ -25,5 +33,5 @@ class LLM(Protocol):
 
     @property
     def max_tokens(self) -> int:
-        """只读数据，返回LLM的最大生成token数"""
+        """只读属性，返回LLM的最大生成token数"""
         ...

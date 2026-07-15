@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/20 15:27
+@Author  : thezehui@gmail.com
+@File    : planner.py
+"""
 import logging
 from typing import Optional, AsyncGenerator
 
@@ -11,6 +18,26 @@ from app.domain.services.prompts.planner import (
 )
 from app.domain.services.prompts.system import SYSTEM_PROMPT
 from .base import BaseAgent
+
+"""
+多Agent系统/flow=PlannerAgent+ReActAgent
+
+顺序:
+1. PlannerAgent生成规划;
+2. 循环取出规划中的子步骤，让ReActAgent执行，依次迭代;
+3. ReActAgent执行完每一个子步骤之后，需要将子步骤结果+Plan传递给PlannerAgent让其更新计划/Plan；
+4. 循环取出规划中的子步骤，让ReActAgent执行，依次迭代;
+5. ...
+6. 直到所有子任务/步骤都完成，这时候将子步骤的所有结果汇总进行总结(ReActAgent);
+
+PlannerAgent:
+- 功能: 将用户的需求拆解成多个子任务+根据已完成的子任务更新规划
+- 提示词: 创建规划的prompt、更新规划的prompt
+
+ReActAgent:
+- 功能: 迭代执行完每一个子任务、汇总所有的子任务进行总结
+- 提示词: 执行任务的prompt、汇总总结prompt
+"""
 
 logger = logging.getLogger(__name__)
 

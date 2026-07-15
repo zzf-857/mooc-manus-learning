@@ -22,10 +22,12 @@ api/config.yaml
 **/out/
 **/coverage/
 **/*.tsbuildinfo
+**/.playwright-cli/
 
 # IDE and OS metadata
 **/.idea/
 **/.vscode/
+**/.cursor/
 .DS_Store
 Thumbs.db
 
@@ -37,3 +39,5 @@ Thumbs.db
 # Local TLS material
 nginx/ssl/
 
+# Local bind-mount data (when not using named Docker volumes)
+.data/

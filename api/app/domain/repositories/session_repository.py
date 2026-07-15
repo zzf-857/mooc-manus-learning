@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/14 10:48
+@Author  : thezehui@gmail.com
+@File    : session_repository.py
+"""
 from datetime import datetime
 from typing import Protocol, List, Optional
 

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/10 9:48
+@Author  : thezehui@gmail.com
+@File    : shell.py
+"""
 from typing import Optional
 
 from app.domain.external.sandbox import Sandbox

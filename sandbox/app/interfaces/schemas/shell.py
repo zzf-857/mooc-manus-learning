@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/11 23:21
+@Author  : thezehui@gmail.com
+@File    : shell.py
+"""
 from typing import Optional
 
 from pydantic import BaseModel, Field

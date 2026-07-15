@@ -1,10 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/12 14:36
+@Author  : thezehui@gmail.com
+@File    : file.py
+"""
 import asyncio
 import glob
 import logging
-import os
 import os.path
 import re
-import sys
 from typing import Optional
 
 from fastapi import UploadFile
@@ -46,18 +51,15 @@ class FileService:
         """根据传递的文件路径+起始行号+权限+最大长度读取文件内容"""
         try:
             # 1.检测在当前权限下能否获取该文件
-            # 如果是 Windows，由于没有 sudo 机制，一律使用普通读取
-            is_windows = sys.platform == "win32"
-            
-            if not os.path.exists(filepath) and (not sudo or is_windows):
+            if not os.path.exists(filepath) and not sudo:
                 logger.error(f"要读取的文件不存在或无权限: {filepath}")
                 raise NotFoundException(f"要读取的文件不存在或无权限: {filepath}")
 
-            # 2.系统下统一优先使用utf-8编码
+            # 2.ubuntu系统下统一使用utf-8编码
             encoding = "utf-8"
 
-            # 3.判断是否使用sudo且不是Windows系统，如果是，则使用命令行的形式读取文件
-            if sudo and not is_windows:
+            # 3.判断是否为sudo，如果是sudo系统则使用命令行的形式读取文件
+            if sudo:
                 # 4.使用sudo cat命令读取文件内容
                 command = f"sudo cat '{filepath}'"
                 process = await asyncio.create_subprocess_shell(
@@ -79,15 +81,8 @@ class FileService:
                 # 8.创建一个内部读取函数
                 def async_read_file() -> str:
                     try:
-                        # 尝试使用 utf-8 读取，如果出错，在 Windows 下尝试使用 gbk 兜底读取
-                        try:
-                            with open(filepath, "r", encoding=encoding) as f:
-                                return f.read()
-                        except UnicodeDecodeError:
-                            if is_windows:
-                                with open(filepath, "r", encoding="gbk", errors="replace") as f:
-                                    return f.read()
-                            raise
+                        with open(filepath, "r", encoding=encoding) as f:
+                            return f.read()
                     except Exception as async_read_file_exception:
                         raise AppException(msg=f"读取文件失败: {str(async_read_file_exception)}")
 
@@ -131,10 +126,8 @@ class FileService:
             if trailing_newline:
                 content = content + "\n"
 
-            is_windows = sys.platform == "win32"
-
-            # 2.判断是否使用sudo且不是Windows，如果是，则使用命令行的形式先写入一个缓存文件，然后覆盖
-            if sudo and not is_windows:
+            # 2.判断是否是sudo权限，如果是则使用命令行的形式先写入一个缓存文件，然后将缓存文件覆盖原始文件
+            if sudo:
                 # 3.使用命令的方式先向临时文件写入数据，计算追加模式
                 mode = ">>" if append else ">"
 
@@ -150,8 +143,8 @@ class FileService:
                 # 6.使用asyncio创建子线程并写入
                 bytes_written = await asyncio.to_thread(async_write_temp_file)
 
-                # 7.使用命令行将临时文件写入到目标文件中
-                command = f"sudo bash -c \"cat {temp_file} {mode} '{filepath}'\""
+                # 7.使用命令行将临时文件写入到目标哦文件中
+                command = f"sudo bash -c \"cat {temp_file} {mode} {filepath}\""
                 process = await asyncio.create_subprocess_shell(
                     command,
                     stdout=asyncio.subprocess.PIPE,
@@ -168,13 +161,12 @@ class FileService:
                 # 10.清除下临时文件
                 os.unlink(temp_file)
             else:
-                # 11.非sudo或Windows环境使用Python方式写入，先确保文件路径存在
+                # 11.非sudo使用Python方式写入，先确保文件路径存在
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
                 # 12.创建一个异步写入的函数
                 def async_write_file() -> int:
                     write_mode = "a" if append else "w"
-                    # 在 Windows 下统一以 utf-8 编码写入文件
                     with open(filepath, write_mode, encoding="utf-8") as f:
                         f.write(content)
                     return len(content.encode("utf-8"))
@@ -327,12 +319,12 @@ class FileService:
         )
 
     async def delete_file(self, filepath: str) -> FileDeleteResult:
-        """根据传递的路径删除指定文件"""
+        """根据传递的路径+sudo删除指定文件"""
         # 1.判断文件是否存在
         await self.ensure_file(filepath)
 
         try:
-            # 2.调用系统 remove 删除文件
+            # 2.调用命令删除文件
             os.remove(filepath)
             return FileDeleteResult(filepath=filepath, deleted=True)
         except Exception as e:

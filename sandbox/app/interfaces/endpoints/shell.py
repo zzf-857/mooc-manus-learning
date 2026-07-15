@@ -1,23 +1,23 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Time    : 2025/05/10 17:18
+@Author  : thezehui@gmail.com
+@File    : shell.py
+"""
 import os
 
 from fastapi import APIRouter, Depends
 
 from app.interfaces.errors.exceptions import BadRequestException
 from app.interfaces.schemas.base import Response
-from app.interfaces.schemas.shell import (
-    ShellExecuteRequest,
-    ShellReadRequest,
-    ShellWaitRequest,
-    ShellWriteRequest,
-    ShellKillRequest,
-)
+from app.interfaces.schemas.shell import ShellExecuteRequest, ShellReadRequest, ShellWaitRequest, ShellWriteRequest, \
+    ShellKillRequest
 from app.interfaces.service_dependencies import get_shell_service
 from app.models.shell import (
     ShellWaitResult,
     ShellWriteResult,
-    ShellKillResult,
-    ShellExecuteResult,
-    ShellReadResult,
+    ShellKillResult, ShellExecuteResult, ShellReadResult,
 )
 from app.services.shell import ShellService
 
