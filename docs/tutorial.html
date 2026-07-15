@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MoocManus 离线交互学习实验室">
+  <title>MoocManus 交互学习实验室</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071018;
+      --panel: #0d1924;
+      --panel-2: #122332;
+      --text: #e7f1f8;
+      --muted: #8da5b5;
+      --line: #243a48;
+      --cyan: #52d9df;
+      --green: #79e0a2;
+      --yellow: #ffd36a;
+      --red: #ff8585;
+      --purple: #b8a1ff;
+      --shadow: 0 18px 50px rgba(0, 0, 0, .26);
+    }
+    :root.light {
+      color-scheme: light;
+      --bg: #eef5f7;
+      --panel: #ffffff;
+      --panel-2: #f5fafb;
+      --text: #10222d;
+      --muted: #526c7a;
+      --line: #d2e0e5;
+      --cyan: #087f88;
+      --green: #147a42;
+      --yellow: #9a6700;
+      --red: #b42318;
+      --purple: #6847bd;
+      --shadow: 0 18px 50px rgba(36, 66, 80, .12);
+    }
+    * { box-sizing: border-box; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 80% -10%, rgba(82, 217, 223, .14), transparent 32rem),
+        radial-gradient(circle at 10% 35%, rgba(184, 161, 255, .09), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      font: 15px/1.65 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: var(--cyan); }
+    code, pre, textarea.output {
+      font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+    .skip-link {
+      position: fixed; left: 1rem; top: -5rem; z-index: 100;
+      background: var(--cyan); color: #041014; padding: .7rem 1rem; border-radius: .6rem;
+    }
+    .skip-link:focus { top: 1rem; }
+    .layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); min-height: 100vh; }
+    aside {
+      position: sticky; top: 0; height: 100vh; overflow: auto;
+      border-right: 1px solid var(--line); background: rgba(7, 16, 24, .92);
+      backdrop-filter: blur(18px); padding: 1.1rem;
+    }
+    :root.light aside { background: rgba(255,255,255,.9); }
+    .brand { display: flex; gap: .8rem; align-items: center; margin-bottom: 1rem; }
+    .logo {
+      width: 42px; height: 42px; display: grid; place-items: center;
+      border-radius: 13px; background: linear-gradient(135deg, var(--cyan), var(--purple));
+      color: #061117; font-weight: 900; box-shadow: var(--shadow);
+    }
+    .brand strong { display: block; font-size: 1rem; }
+    .brand small { color: var(--muted); }
+    .search {
+      width: 100%; border: 1px solid var(--line); color: var(--text);
+      background: var(--panel); padding: .72rem .8rem; border-radius: .7rem; outline: none;
+    }
+    .search:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(82,217,223,.12); }
+    nav { margin: 1rem 0; display: grid; gap: .25rem; }
+    nav a {
+      color: var(--muted); text-decoration: none; padding: .55rem .65rem;
+      border-radius: .55rem; display: flex; gap: .55rem; align-items: center;
+    }
+    nav a:hover, nav a.active { background: var(--panel-2); color: var(--text); }
+    nav .num { color: var(--cyan); font-size: .76rem; min-width: 1.7rem; }
+    .side-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .btn {
+      border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+      padding: .62rem .8rem; border-radius: .65rem;
+    }
+    .btn:hover { border-color: var(--cyan); }
+    .btn.primary { background: var(--cyan); color: #061117; border-color: var(--cyan); font-weight: 750; }
+    .progress-box { margin-top: 1rem; color: var(--muted); font-size: .82rem; }
+    .progress-track { height: 7px; background: var(--panel-2); border-radius: 10px; overflow: hidden; margin-top: .35rem; }
+    .progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), var(--green)); transition: width .25s; }
+    main { min-width: 0; padding: 2rem clamp(1rem, 4vw, 4rem) 6rem; }
+    section { max-width: 1160px; margin: 0 auto 5rem; scroll-margin-top: 1.5rem; }
+    .hero { min-height: 72vh; display: grid; align-content: center; }
+    .eyebrow { color: var(--cyan); text-transform: uppercase; letter-spacing: .15em; font-weight: 750; font-size: .76rem; }
+    h1 { font-size: clamp(2.4rem, 6vw, 5.7rem); line-height: .98; margin: .7rem 0 1.2rem; letter-spacing: -.055em; max-width: 950px; }
+    h2 { font-size: clamp(1.7rem, 3.2vw, 2.7rem); line-height: 1.15; margin: 0 0 1rem; letter-spacing: -.03em; }
+    h3 { margin-top: 0; }
+    .lead { max-width: 760px; color: var(--muted); font-size: 1.08rem; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.3rem; }
+    .hero-actions a { text-decoration: none; }
+    .notice {
+      margin-top: 1.5rem; padding: 1rem 1.1rem; border-left: 3px solid var(--yellow);
+      background: rgba(255, 211, 106, .07); border-radius: 0 .7rem .7rem 0; max-width: 780px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; }
+    .card {
+      grid-column: span 4; background: linear-gradient(145deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--line); border-radius: 1rem; padding: 1.15rem; box-shadow: var(--shadow);
+    }
+    .card.wide { grid-column: span 8; }
+    .card.full { grid-column: 1 / -1; }
+    .card p:last-child { margin-bottom: 0; }
+    .tag {
+      display: inline-block; border: 1px solid var(--line); border-radius: 99px;
+      padding: .15rem .55rem; color: var(--muted); font-size: .75rem; margin: .1rem;
+    }
+    .arch {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem;
+      align-items: stretch; margin-top: 1rem;
+    }
+    .node {
+      border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+      padding: 1rem; border-radius: .8rem; text-align: left; min-height: 105px;
+    }
+    .node:hover, .node.selected { border-color: var(--cyan); transform: translateY(-2px); }
+    .node strong { display: block; color: var(--cyan); margin-bottom: .25rem; }
+    .node small { color: var(--muted); }
+    .detail {
+      margin-top: 1rem; min-height: 150px; padding: 1rem; background: var(--panel-2);
+      border: 1px solid var(--line); border-radius: .8rem;
+    }
+    .detail code { color: var(--green); }
+    .architecture-image { width: 100%; max-height: 720px; object-fit: contain; border-radius: .8rem; background: #09131c; }
+    .stepper { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 1rem; }
+    .flow-stage {
+      min-height: 360px; border: 1px solid var(--line); background: var(--panel);
+      border-radius: 1rem; padding: 1.4rem; display: grid; align-content: center;
+    }
+    .flow-stage .big { font-size: clamp(1.8rem, 5vw, 4rem); color: var(--cyan); font-weight: 850; }
+    .flow-stage .explain { color: var(--muted); max-width: 700px; }
+    .flow-meter { display: flex; gap: .35rem; margin: 1.3rem 0; }
+    .flow-dot { height: 6px; flex: 1; border-radius: 10px; background: var(--line); }
+    .flow-dot.on { background: var(--cyan); }
+    .state-list { display: grid; gap: .55rem; }
+    .state-item { padding: .65rem; border: 1px solid var(--line); border-radius: .6rem; color: var(--muted); }
+    .state-item.on { border-color: var(--green); color: var(--text); background: rgba(121,224,162,.07); }
+    .controls { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+    label { display: grid; gap: .3rem; color: var(--muted); }
+    input, select, textarea {
+      width: 100%; border: 1px solid var(--line); background: var(--bg);
+      color: var(--text); padding: .68rem; border-radius: .55rem;
+    }
+    textarea.output { min-height: 290px; white-space: pre; resize: vertical; }
+    .warning { color: var(--yellow); min-height: 1.6rem; }
+    .quiz-question { border-top: 1px solid var(--line); padding: 1rem 0; }
+    .quiz-question:first-child { border-top: 0; }
+    .option { display: flex; gap: .55rem; align-items: flex-start; padding: .35rem 0; color: var(--text); }
+    .option input { width: auto; margin-top: .35rem; }
+    .feedback { margin-top: .4rem; color: var(--muted); display: none; }
+    .correct .feedback { color: var(--green); display: block; }
+    .wrong .feedback { color: var(--red); display: block; }
+    .checklist { display: grid; gap: .55rem; }
+    .checkrow { display: flex; gap: .7rem; padding: .7rem; border: 1px solid var(--line); border-radius: .6rem; }
+    .checkrow input { width: auto; }
+    .search-hidden { display: none !important; }
+    .search-result { color: var(--yellow); min-height: 1.5rem; margin-top: .4rem; }
+    .kbd { padding: .12rem .38rem; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: .3rem; font-size: .78rem; }
+    footer { color: var(--muted); text-align: center; padding-top: 2rem; border-top: 1px solid var(--line); }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      nav { grid-template-columns: repeat(2, 1fr); }
+      .card, .card.wide { grid-column: 1 / -1; }
+      .stepper { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      main { padding: 1.2rem .8rem 4rem; }
+      nav { grid-template-columns: 1fr; }
+      .arch, .form-grid { grid-template-columns: 1fr; }
+      .hero { min-height: auto; padding: 3rem 0; }
+    }
+    @media print {
+      aside, .hero-actions, .controls, #themeButton { display: none !important; }
+      .layout { display: block; }
+      body { background: white; color: black; }
+      section { break-inside: avoid; margin-bottom: 2rem; }
+      .card, .flow-stage, .detail { box-shadow: none; border-color: #aaa; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+  <div class="layout">
+    <aside aria-label="教程导航">
+      <div class="brand">
+        <div class="logo">M</div>
+        <div><strong>MoocManus Lab</strong><small>离线交互教程</small></div>
+      </div>
+      <label>
+        <span class="sr-only">搜索章节</span>
+        <input id="search" class="search" type="search" placeholder="搜索：SSE、MCP、部署…" autocomplete="off">
+      </label>
+      <div id="searchResult" class="search-result" aria-live="polite"></div>
+      <nav id="nav">
+        <a href="#overview"><span class="num">01</span>学习地图</a>
+        <a href="#architecture"><span class="num">02</span>可点击架构</a>
+        <a href="#flow"><span class="num">03</span>Agent 状态机</a>
+        <a href="#events"><span class="num">04</span>事件流水线</a>
+        <a href="#config"><span class="num">05</span>配置生成器</a>
+        <a href="#security"><span class="num">06</span>安全边界</a>
+        <a href="#quiz"><span class="num">07</span>知识测验</a>
+        <a href="#checkpoint"><span class="num">08</span>验收清单</a>
+      </nav>
+      <div class="side-actions">
+        <button id="themeButton" class="btn" type="button">切换主题</button>
+        <button id="resetButton" class="btn" type="button">重置进度</button>
+      </div>
+      <div class="progress-box">
+        <span id="progressText">学习进度 0%</span>
+        <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+      </div>
+    </aside>
+
+    <main id="main">
+      <section id="hero" class="hero searchable" data-keywords="首页 介绍 快速开始 教程">
+        <div class="eyebrow">Agent Engineering · Full Stack · Local First</div>
+        <h1>把一个 Agent 项目<br>拆到真正看懂</h1>
+        <p class="lead">这不是替代 Markdown 教材的“炫技页面”，而是一间离线实验室。点击架构节点、逐帧播放 Planner/ReAct、生成安全配置并完成测验，再回到源码逐文件验证。</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#overview">开始学习</a>
+          <a class="btn" href="README.md">打开完整文档目录</a>
+          <a class="btn" href="../README.md">返回项目首页</a>
+        </div>
+        <div class="notice"><strong>安全提醒：</strong>生成器不会收集或保存密钥。请只填写模型地址和非敏感参数，真实 API key 放进被 Git 忽略的 <code>api/config.yaml</code>。</div>
+      </section>
+
+      <section id="overview" class="searchable" data-keywords="学习路线 Python FastAPI Agent MCP A2A Next.js Docker">
+        <div class="eyebrow">01 · Learning Map</div>
+        <h2>先建立地图，再钻进实现</h2>
+        <div class="grid">
+          <article class="card"><span class="tag">基础</span><h3>Python 与 FastAPI</h3><p>异步函数、依赖注入、Pydantic、分层架构、Repository 与 UoW。</p><a href="02-PYTHON_FASTAPI.md">阅读章节 →</a></article>
+          <article class="card"><span class="tag">核心</span><h3>Planner + ReAct</h3><p>计划、执行、工具调用、记忆、失败状态和任务生命周期。</p><a href="04-AGENT_CORE.md">阅读章节 →</a></article>
+          <article class="card"><span class="tag">协议</span><h3>MCP + A2A</h3><p>本地/远程工具发现与远程 Agent 委托，以及 enabled 安全契约。</p><a href="05-TOOLS_MCP_A2A.md">阅读章节 →</a></article>
+          <article class="card"><span class="tag">数据</span><h3>Postgres + Redis + SSE</h3><p>长期事实、运行态流、断线恢复和浏览器事件投影。</p><a href="06-DATA_EVENTS_API.md">阅读章节 →</a></article>
+          <article class="card"><span class="tag">前端</span><h3>Next.js 事件 UI</h3><p>ReadableStream、归一化、时间线、工具卡片和 noVNC。</p><a href="07-FRONTEND.md">阅读章节 →</a></article>
+          <article class="card"><span class="tag">工程</span><h3>部署与安全</h3><p>六服务 Compose、唯一入口、静态/动态沙箱和生产缺口。</p><a href="08-DEPLOYMENT_SECURITY.md">阅读章节 →</a></article>
+        </div>
+      </section>
+
+      <section id="architecture" class="searchable" data-keywords="架构 Nginx UI API PostgreSQL Redis Sandbox 容器">
+        <div class="eyebrow">02 · Architecture</div>
+        <h2>点击一个节点，看清它的责任边界</h2>
+        <p class="lead">节点不是“技术名词墙”。每个服务都应有单一主要职责、明确入口和失败表现。</p>
+        <div class="arch" id="archNodes"></div>
+        <div id="archDetail" class="detail" aria-live="polite"></div>
+        <details class="card full" style="margin-top:1rem">
+          <summary>查看完整架构插图</summary>
+          <img class="architecture-image" src="img/system-architecture.svg" alt="MoocManus 六服务架构与 Agent 数据流">
+        </details>
+      </section>
+
+      <section id="flow" class="searchable" data-keywords="Planner ReAct Flow 状态机 计划 工具 记忆">
+        <div class="eyebrow">03 · Agent State Machine</div>
+        <h2>逐帧播放 Planner/ReAct</h2>
+        <div class="stepper">
+          <div class="flow-stage">
+            <div id="flowNumber" class="eyebrow"></div>
+            <div id="flowTitle" class="big"></div>
+            <p id="flowExplain" class="explain"></p>
+            <div id="flowMeter" class="flow-meter"></div>
+            <div class="controls">
+              <button id="prevFlow" class="btn" type="button">上一步</button>
+              <button id="nextFlow" class="btn primary" type="button">下一步</button>
+              <button id="autoFlow" class="btn" type="button">自动播放</button>
+            </div>
+          </div>
+          <div id="flowStates" class="state-list" aria-label="Agent 步骤列表"></div>
+        </div>
+      </section>
+
+      <section id="events" class="searchable" data-keywords="SSE Redis Stream PostgreSQL EventSource ReadableStream 事件">
+        <div class="eyebrow">04 · Event Pipeline</div>
+        <h2>同一事件，三种用途</h2>
+        <div class="grid">
+          <article class="card"><h3>PostgreSQL</h3><p>长期业务事实。刷新详情页时重建历史时间线。</p><span class="tag">durable</span><span class="tag">query</span></article>
+          <article class="card"><h3>Redis Stream</h3><p>活跃任务的低延迟通道。当前有长度上限、24 小时 TTL 和销毁清理。</p><span class="tag">replay</span><span class="tag">bounded</span></article>
+          <article class="card"><h3>SSE</h3><p>HTTP 单向推送到浏览器。POST 聊天使用 fetch + ReadableStream 自行解析。</p><span class="tag">stream</span><span class="tag">event_id</span></article>
+          <article class="card wide">
+            <h3>calling → called 不是两次工具调用</h3>
+            <p>两帧共享稳定的 <code>tool_call_id</code>：前一帧让 UI 立即显示“调用中”，后一帧带回结果。前端应更新同一张卡片。</p>
+            <pre>event: tool
+data: {"tool_call_id":"call-7","function":"shell_execute","status":"calling"}
+
+event: tool
+data: {"tool_call_id":"call-7","function":"shell_execute","status":"called"}</pre>
+          </article>
+          <article class="card">
+            <h3>重连语义</h3>
+            <p>携带最后 <code>event_id</code> 从后续位置恢复。网络系统仍应容忍重复，不能宣称天然“恰好一次”。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="config" class="searchable" data-keywords="环境变量 env yaml 配置 生成器 LLM DeepSeek OpenAI 沙箱">
+        <div class="eyebrow">05 · Safe Config Generator</div>
+        <h2>生成本地配置骨架</h2>
+        <div class="grid">
+          <div class="card wide">
+            <div class="form-grid">
+              <label>对外端口<input id="cfgPort" type="number" min="1024" max="65535" value="8088"></label>
+              <label>文件后端<select id="cfgStorage"><option value="local">local（推荐）</option><option value="cos">Tencent COS</option></select></label>
+              <label>LLM Base URL<input id="cfgBase" value="https://api.deepseek.com" spellcheck="false"></label>
+              <label>模型名<input id="cfgModel" value="deepseek-chat" spellcheck="false"></label>
+              <label>最大迭代<input id="cfgIterations" type="number" min="1" max="500" value="100"></label>
+              <label>最大搜索结果<input id="cfgSearch" type="number" min="1" max="100" value="10"></label>
+            </div>
+            <p id="cfgWarning" class="warning"></p>
+            <div class="controls">
+              <button id="generateConfig" class="btn primary" type="button">生成配置</button>
+              <button class="btn copy" data-target="envOutput" type="button">复制 .env</button>
+              <button class="btn copy" data-target="yamlOutput" type="button">复制 YAML</button>
+            </div>
+          </div>
+          <div class="card full">
+            <div class="form-grid">
+              <label>根目录 .env<textarea id="envOutput" class="output" readonly></textarea></label>
+              <label>api/config.yaml<textarea id="yamlOutput" class="output" readonly></textarea></label>
+            </div>
+            <p class="lead">生成内容故意把 API key 留空。COS 模式只生成占位符；真实凭据不得进入 Git、截图、Issue 或教程。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="security" class="searchable" data-keywords="安全 secret Docker Socket 认证 沙箱 SSRF 上传">
+        <div class="eyebrow">06 · Security Boundaries</div>
+        <h2>LLM 不是安全边界</h2>
+        <div class="grid">
+          <article class="card"><h3>默认静态沙箱</h3><p>不挂 Docker Socket，只在内部网络开放。适合可信单用户学习。</p></article>
+          <article class="card"><h3>动态沙箱</h3><p>每会话隔离更好，但控制 Docker Socket 接近宿主机 root 能力，必须显式启用。</p></article>
+          <article class="card"><h3>不可信输入</h3><p>Prompt、网页、文件、MCP、A2A 和模型生成参数都可能诱导危险工具调用。</p></article>
+          <article class="card"><h3>秘密</h3><p>真实值只放忽略文件或秘密管理器。进入历史后先吊销，再重写历史。</p></article>
+          <article class="card"><h3>公网缺口</h3><p>当前没有完整认证、租户授权、限流、CSRF、恶意文件扫描与强沙箱隔离。</p></article>
+          <article class="card"><h3>资源有界</h3><p>CPU、内存、PID、Shell 输出、Redis Stream 都必须有上限和清理路径。</p></article>
+        </div>
+      </section>
+
+      <section id="quiz" class="searchable" data-keywords="测验 quiz 答题 检查 知识点">
+        <div class="eyebrow">07 · Quiz</div>
+        <h2>不要凭感觉：用答案证明理解</h2>
+        <div id="quizRoot" class="card full"></div>
+        <div class="controls">
+          <button id="gradeQuiz" class="btn primary" type="button">提交答案</button>
+          <strong id="quizScore" aria-live="polite"></strong>
+        </div>
+      </section>
+
+      <section id="checkpoint" class="searchable" data-keywords="验收 checklist 本地运行 测试 部署 学习进度">
+        <div class="eyebrow">08 · Checkpoint</div>
+        <h2>本地交付完成标准</h2>
+        <div id="checklist" class="checklist"></div>
+        <p class="lead">勾选项保存在当前浏览器的 localStorage，只代表你的学习记录，不会发送到网络。</p>
+      </section>
+
+      <footer>
+        <p>MoocManus 交互学习实验室 · 完全离线 · 详细内容以同目录 Markdown 和当前源码为准</p>
+        <p>快捷键：按 <span class="kbd">/</span> 聚焦搜索，按 <span class="kbd">Esc</span> 清空。</p>
+      </footer>
+    </main>
+  </div>
+  <script>
+    (function () {
+      'use strict';
+
+      var archData = [
+        { id: 'nginx', name: 'Nginx', meta: '唯一宿主入口 · 127.0.0.1:8088', body: '把 / 转给 Next.js，把 /api 转给 FastAPI，并为 SSE 关闭缓冲、为 VNC 保留 WebSocket Upgrade。', files: 'nginx/conf.d/default.conf' },
+        { id: 'ui', name: 'Next.js UI', meta: '页面、SSE 解析、时间线、noVNC', body: '浏览器端把 REST/SSE 数据投影为会话、步骤和工具卡片。生产构建使用 standalone 输出。', files: 'ui/src/hooks/use-session-detail.ts' },
+        { id: 'api', name: 'FastAPI', meta: '应用入口 · :8000', body: '负责 HTTP 契约、依赖注入、Agent 编排、持久化协调和 Sandbox/远程协议适配。', files: 'api/app/main.py' },
+        { id: 'postgres', name: 'PostgreSQL', meta: '长期事实 · :5432', body: '保存 session、event 和 file 元数据；Alembic 管理 schema 演进。', files: 'api/app/infrastructure/models/' },
+        { id: 'redis', name: 'Redis', meta: '运行态事件 · :6379', body: '保存任务注册和输入/输出 Stream。流有最大长度、24 小时 TTL，任务销毁时主动删除。', files: 'api/app/infrastructure/external/task/' },
+        { id: 'sandbox', name: 'Sandbox', meta: 'Shell + File + Chrome + VNC', body: '执行高风险工具能力。默认是内部网络上的共享静态容器，并设置资源与权限限制。', files: 'sandbox/app/services/' }
+      ];
+
+      var flowData = [
+        { title: '接收消息', explain: 'AgentService 取得 session、附件和最后 event_id，决定创建任务还是连接已有任务。' },
+        { title: '准备运行环境', explain: 'AgentTaskRunner 取得配置、Sandbox、LLM、工具集，并建立事件输入/输出通道。' },
+        { title: 'Planner 建计划', explain: 'Planner 根据用户目标和记忆生成结构化步骤。失败会受 max_retries 约束。' },
+        { title: 'Flow 选择步骤', explain: 'PlannerReActFlow 找到下一项 pending step，把目标交给 ReAct，而不是让单个 Agent 随意漂移。' },
+        { title: 'ReAct 调工具', explain: '模型输出工具调用；系统先发 calling，执行参数校验和具体适配器，再发 called 或失败结果。' },
+        { title: '更新计划或继续', explain: '执行结果进入记忆。Flow 决定继续当前计划、让 Planner 修订，或等待用户补充。' },
+        { title: '完成与清理', explain: '最终消息和 done/error 事件写入长期存储并推给 UI；任务、Stream、沙箱和文件按生命周期清理。' }
+      ];
+
+      var quizData = [
+        { q: '默认 Compose 为什么不把 Docker Socket 挂给 API？', options: ['为了减小镜像体积', '因为控制 Socket 接近宿主机 root 权限', '因为 Redis 不支持它'], answer: 1, why: 'Docker Socket 是高权限控制面，默认静态沙箱避免把它放入普通学习路径。' },
+        { q: '聊天 SSE 为什么使用 fetch + ReadableStream？', options: ['EventSource 不支持 POST JSON', 'WebSocket 无法传文本', 'Nginx 只支持 fetch'], answer: 0, why: '原生 EventSource 是 GET；聊天需要 POST message/attachments/event_id。' },
+        { q: 'PostgreSQL 和 Redis Stream 同时存在的主要原因？', options: ['保存两份永不删除的备份', '长期事实与低延迟运行态职责不同', 'FastAPI 强制要求'], answer: 1, why: '数据库用于长期查询和历史恢复，Stream 用于活跃任务的实时传递与短期 replay。' },
+        { q: 'MCP server 的 enabled 应在哪里执行？', options: ['只在设置页隐藏', '只在工具发现', '连接、暴露、直接调用都要执行'], answer: 2, why: 'UI 不是安全边界；三层执行避免绕过和无谓连接。' },
+        { q: '密钥从当前文件删除后，下一步最重要的动作是什么？', options: ['立刻压缩仓库', '在供应商侧吊销/轮换', '改 README'], answer: 1, why: '已经泄露的值无法因 Git 重写重新变安全，必须先让它失效。' },
+        { q: 'Tool calling 和 called 事件共享什么才能更新同一张卡片？', options: ['随机 CSS class', '稳定 tool_call_id', '容器 IP'], answer: 1, why: '稳定调用 ID 是事件关联键，状态帧不是两次调用。' },
+        { q: '/api/status 返回 200 能证明真实聊天可用吗？', options: ['能', '不能，它当前只验证 PostgreSQL/Redis', '只有 Windows 不能'], answer: 1, why: 'LLM、Sandbox 全链路、MCP/A2A 和文件空间并不在当前健康检查内。' },
+        { q: 'TypeScript 泛型能否保证服务器响应在浏览器运行时合法？', options: ['能，编译后自动校验', '不能，需要守卫或运行时 schema', '仅 SSE 可以'], answer: 1, why: '类型在编译后被擦除，外部数据仍需运行时验证。' }
+      ];
+
+      var checkData = [
+        '我能解释六个服务及唯一对外入口',
+        '我能从首页沿代码追到 Planner/ReAct',
+        '我能区分数据库事件、Redis Stream 和 SSE',
+        '我能解释 MCP 与 A2A 的职责差异',
+        'API 和 Sandbox 测试通过',
+        'UI lint、build、audit 通过',
+        '六服务启动并通过 HTTP/会话/文件/Sandbox smoke test',
+        '真实密钥不在当前树或 Git 历史',
+        '我知道当前项目不应直接暴露公网',
+        '我完成了至少三个 docs/10 中的练习'
+      ];
+
+      var archNodes = document.getElementById('archNodes');
+      var archDetail = document.getElementById('archDetail');
+      archData.forEach(function (item, index) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'node';
+        button.dataset.id = item.id;
+        button.innerHTML = '<strong>' + item.name + '</strong><small>' + item.meta + '</small>';
+        button.addEventListener('click', function () { selectArch(item.id); });
+        archNodes.appendChild(button);
+        if (index === 0) button.classList.add('selected');
+      });
+      function selectArch(id) {
+        var item = archData.filter(function (x) { return x.id === id; })[0];
+        Array.prototype.forEach.call(document.querySelectorAll('.node'), function (node) {
+          node.classList.toggle('selected', node.dataset.id === id);
+        });
+        archDetail.innerHTML = '<h3>' + item.name + '</h3><p>' + item.body + '</p><p>代码入口：<code>' + item.files + '</code></p>';
+      }
+      selectArch('nginx');
+
+      var flowIndex = 0;
+      var autoTimer = null;
+      var meter = document.getElementById('flowMeter');
+      var stateList = document.getElementById('flowStates');
+      flowData.forEach(function (item, index) {
+        var dot = document.createElement('span');
+        dot.className = 'flow-dot';
+        meter.appendChild(dot);
+        var state = document.createElement('button');
+        state.type = 'button';
+        state.className = 'state-item';
+        state.textContent = (index + 1) + '. ' + item.title;
+        state.addEventListener('click', function () { flowIndex = index; renderFlow(); });
+        stateList.appendChild(state);
+      });
+      function renderFlow() {
+        var item = flowData[flowIndex];
+        document.getElementById('flowNumber').textContent = 'STEP ' + (flowIndex + 1) + ' / ' + flowData.length;
+        document.getElementById('flowTitle').textContent = item.title;
+        document.getElementById('flowExplain').textContent = item.explain;
+        Array.prototype.forEach.call(meter.children, function (dot, i) { dot.classList.toggle('on', i <= flowIndex); });
+        Array.prototype.forEach.call(stateList.children, function (node, i) { node.classList.toggle('on', i === flowIndex); });
+      }
+      document.getElementById('prevFlow').addEventListener('click', function () {
+        flowIndex = (flowIndex - 1 + flowData.length) % flowData.length; renderFlow();
+      });
+      document.getElementById('nextFlow').addEventListener('click', function () {
+        flowIndex = (flowIndex + 1) % flowData.length; renderFlow();
+      });
+      document.getElementById('autoFlow').addEventListener('click', function () {
+        if (autoTimer) {
+          clearInterval(autoTimer); autoTimer = null; this.textContent = '自动播放';
+        } else {
+          var self = this; self.textContent = '停止播放';
+          autoTimer = setInterval(function () { flowIndex = (flowIndex + 1) % flowData.length; renderFlow(); }, 2200);
+        }
+      });
+      renderFlow();
+
+      function generateConfig() {
+        var port = Number(document.getElementById('cfgPort').value);
+        var storage = document.getElementById('cfgStorage').value;
+        var base = document.getElementById('cfgBase').value.trim();
+        var model = document.getElementById('cfgModel').value.trim();
+        var iterations = Number(document.getElementById('cfgIterations').value);
+        var search = Number(document.getElementById('cfgSearch').value);
+        var warnings = [];
+        if (port < 1024 || port > 65535) warnings.push('端口应在 1024～65535。');
+        if (!/^https?:\/\//i.test(base)) warnings.push('Base URL 应以 http:// 或 https:// 开头。');
+        if (!model) warnings.push('模型名不能为空。');
+        if (iterations > 200) warnings.push('最大迭代较高，可能显著增加成本和失控风险。');
+        if (storage === 'cos') warnings.push('COS 需要额外凭据；请只写入被忽略的真实 .env。');
+        document.getElementById('cfgWarning').textContent = warnings.join(' ');
+
+        var envLines = [
+          'COMPOSE_PROJECT_NAME=mooc-manus',
+          'NGINX_PORT=' + port,
+          '',
+          'POSTGRES_USER=postgres',
+          'POSTGRES_PASSWORD=manus_local_dev',
+          'POSTGRES_DB=manus',
+          'SQLALCHEMY_DATABASE_URI=postgresql+asyncpg://postgres:manus_local_dev@manus-postgres:5432/manus',
+          '',
+          'REDIS_HOST=manus-redis',
+          'REDIS_PORT=6379',
+          'REDIS_DB=0',
+          'REDIS_PASSWORD=',
+          '',
+          'APP_CONFIG_FILEPATH=/data/config.yaml',
+          'FILE_STORAGE_BACKEND=' + storage,
+          'LOCAL_STORAGE_PATH=/data/files',
+          'COS_SECRET_ID=',
+          'COS_SECRET_KEY=',
+          'COS_REGION=',
+          'COS_BUCKET=',
+          '',
+          'SANDBOX_ADDRESS=manus-sandbox',
+          'SANDBOX_NETWORK=manus-network',
+          'SANDBOX_MEMORY_LIMIT=2g',
+          'SANDBOX_CPUS=2',
+          'SANDBOX_PIDS_LIMIT=512'
+        ];
+        var yamlLines = [
+          'llm_config:',
+          '  base_url: ' + base,
+          '  api_key: \"\"',
+          '  model_name: ' + model,
+          '  temperature: 0.7',
+          '  max_tokens: 8192',
+          '',
+          'agent_config:',
+          '  max_iterations: ' + iterations,
+          '  max_retries: 3',
+          '  max_search_results: ' + search,
+          '',
+          'mcp_config:',
+          '  mcpServers: {}',
+          '',
+          'a2a_config:',
+          '  a2a_servers: []'
+        ];
+        document.getElementById('envOutput').value = envLines.join('\n');
+        document.getElementById('yamlOutput').value = yamlLines.join('\n');
+      }
+      document.getElementById('generateConfig').addEventListener('click', generateConfig);
+      Array.prototype.forEach.call(document.querySelectorAll('.copy'), function (button) {
+        button.addEventListener('click', function () {
+          var target = document.getElementById(button.dataset.target);
+          navigator.clipboard.writeText(target.value).then(function () {
+            var old = button.textContent; button.textContent = '已复制';
+            setTimeout(function () { button.textContent = old; }, 1200);
+          }).catch(function () {
+            target.focus(); target.select(); document.execCommand('copy');
+          });
+        });
+      });
+      generateConfig();
+
+      var quizRoot = document.getElementById('quizRoot');
+      quizData.forEach(function (item, qi) {
+        var block = document.createElement('div');
+        block.className = 'quiz-question';
+        var title = document.createElement('strong');
+        title.textContent = (qi + 1) + '. ' + item.q;
+        block.appendChild(title);
+        item.options.forEach(function (option, oi) {
+          var label = document.createElement('label');
+          label.className = 'option';
+          label.innerHTML = '<input type=\"radio\" name=\"quiz-' + qi + '\" value=\"' + oi + '\"><span>' + option + '</span>';
+          block.appendChild(label);
+        });
+        var feedback = document.createElement('div');
+        feedback.className = 'feedback';
+        feedback.textContent = item.why;
+        block.appendChild(feedback);
+        quizRoot.appendChild(block);
+      });
+      document.getElementById('gradeQuiz').addEventListener('click', function () {
+        var score = 0;
+        Array.prototype.forEach.call(quizRoot.children, function (block, qi) {
+          var selected = block.querySelector('input:checked');
+          var ok = selected && Number(selected.value) === quizData[qi].answer;
+          block.classList.remove('correct', 'wrong');
+          block.classList.add(ok ? 'correct' : 'wrong');
+          if (ok) score += 1;
+        });
+        document.getElementById('quizScore').textContent = '得分：' + score + ' / ' + quizData.length;
+        localStorage.setItem('mooc-manus-quiz-score', String(score));
+        updateProgress();
+      });
+
+      var checklist = document.getElementById('checklist');
+      var savedChecks = JSON.parse(localStorage.getItem('mooc-manus-checks') || '[]');
+      checkData.forEach(function (text, index) {
+        var label = document.createElement('label');
+        label.className = 'checkrow';
+        label.innerHTML = '<input type=\"checkbox\" data-index=\"' + index + '\"><span>' + text + '</span>';
+        var input = label.querySelector('input');
+        input.checked = savedChecks.indexOf(index) >= 0;
+        input.addEventListener('change', saveChecks);
+        checklist.appendChild(label);
+      });
+      function saveChecks() {
+        var values = [];
+        Array.prototype.forEach.call(checklist.querySelectorAll('input'), function (input) {
+          if (input.checked) values.push(Number(input.dataset.index));
+        });
+        localStorage.setItem('mooc-manus-checks', JSON.stringify(values));
+        updateProgress();
+      }
+      function updateProgress() {
+        var checked = checklist.querySelectorAll('input:checked').length;
+        var quiz = Number(localStorage.getItem('mooc-manus-quiz-score') || 0);
+        var totalUnits = checkData.length + quizData.length;
+        var percent = Math.round(((checked + quiz) / totalUnits) * 100);
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = '学习进度 ' + percent + '%';
+      }
+
+      var search = document.getElementById('search');
+      var searchable = document.querySelectorAll('.searchable');
+      function runSearch() {
+        var q = search.value.trim().toLowerCase();
+        var matches = 0;
+        Array.prototype.forEach.call(searchable, function (section) {
+          var text = (section.textContent + ' ' + (section.dataset.keywords || '')).toLowerCase();
+          var visible = !q || text.indexOf(q) >= 0;
+          section.classList.toggle('search-hidden', !visible);
+          if (visible && q) matches += 1;
+        });
+        document.getElementById('searchResult').textContent = q ? ('匹配 ' + matches + ' 个章节') : '';
+      }
+      search.addEventListener('input', runSearch);
+      document.addEventListener('keydown', function (event) {
+        if (event.key === '/' && document.activeElement !== search && !/input|textarea|select/i.test(document.activeElement.tagName)) {
+          event.preventDefault(); search.focus();
+        }
+        if (event.key === 'Escape' && document.activeElement === search) {
+          search.value = ''; runSearch(); search.blur();
+        }
+      });
+
+      var navLinks = document.querySelectorAll('nav a');
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          Array.prototype.forEach.call(navLinks, function (link) {
+            link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id);
+          });
+        });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+      Array.prototype.forEach.call(document.querySelectorAll('main section[id]'), function (section) { observer.observe(section); });
+
+      var theme = localStorage.getItem('mooc-manus-theme');
+      if (theme === 'light') document.documentElement.classList.add('light');
+      document.getElementById('themeButton').addEventListener('click', function () {
+        document.documentElement.classList.toggle('light');
+        localStorage.setItem('mooc-manus-theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
+      });
+      document.getElementById('resetButton').addEventListener('click', function () {
+        localStorage.removeItem('mooc-manus-checks');
+        localStorage.removeItem('mooc-manus-quiz-score');
+        Array.prototype.forEach.call(checklist.querySelectorAll('input'), function (input) { input.checked = false; });
+        Array.prototype.forEach.call(quizRoot.querySelectorAll('input'), function (input) { input.checked = false; });
+        Array.prototype.forEach.call(quizRoot.children, function (block) { block.classList.remove('correct', 'wrong'); });
+        document.getElementById('quizScore').textContent = '';
+        updateProgress();
+      });
+      updateProgress();
+    })();
+  </script>
+</body>
+</html>
